@@ -163,11 +163,16 @@ h3 small{font-family:'Gaegu';font-size:15.6px;color:var(--sub);margin-left:4px}
 .pt-soon{margin-top:10px;font-size:17px;color:#8a6500}
 .soon{background:#fff8d6;border:2px dashed #f5c84a;border-radius:16px;padding:9px 12px;margin-bottom:12px;font-size:17px;color:#8a6500;display:flex;flex-wrap:wrap;gap:4px 10px}
 .soon.ok{background:#eafbe8;border-color:#a8e6a3;color:#2f9a5c}
+.cloud{height:40px;padding:0 10px;border-radius:14px;background:#fff9;font-size:16px;font-family:'Gaegu';font-weight:700;white-space:nowrap}
+.cloud.off{background:#ffe1e5}
+.share{background:#eef6ff;border-radius:16px;padding:12px;font-size:17px;line-height:1.45}
+.share .code{margin-top:8px;font-size:16px}.share .code b{font-size:20px;letter-spacing:1px;background:#fff;border-radius:8px;padding:1px 8px}
+.share .st{font-size:15px;color:#5a7}
 </style>
 </head>
 <body>
 <header><div class="wrap">
-  <div class="top"><h1>📒 학원 보강 수첩<small>결강·보강 한눈에</small></h1><button class="ib" id="setBtn" title="설정">⚙️</button></div>
+  <div class="top"><h1>📒 학원 보강 수첩<small>결강·보강 한눈에</small></h1><button class="cloud" id="cloud" title="온라인 저장">☁️</button><button class="ib" id="setBtn" title="설정">⚙️</button></div>
   <div class="kids" id="kids"></div>
   <div class="sum" id="sum"></div>
 </div></header>
@@ -192,7 +197,38 @@ const DOW='일월화수목금토';
 
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.acads){if(!s.v2){s.acads.forEach(a=>{if(a.ico==='🔤'&&/영어/.test(a.name))a.ico='🍎'});s.v2=1}return s}}catch(e){}const seed=[['피아노','🎹','#ff8fab'],['줄넘기','🤸','#ff9e5e'],['하키','🏑','#4fc3b5'],['영어','🍎','#6aa9ff'],['수영','🏊','#7fd67a'],['학습지','✏️','#9b8cff']];
   return {v2:1,kids:[],acads:seed.map(([name,ico,color])=>({id:uid(),name,ico,color,days:[],time:''})),abs:[],tab:'ac',kid:'all'}}
-function save(){S.tab=tab;S.kid=kid;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function save(){S.tab=tab;S.kid=kid;const d=dataStr();if(d!==S.lastD){S.lastD=d;S.at=Date.now();queuePush()}try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+/* ---------- 온라인 저장 (Firebase RTDB, 가족 코드) ---------- */
+const DB='https://matchmaker-28187-default-rtdb.asia-southeast1.firebasedatabase.app/academy_makeup/';
+const dataStr=()=>JSON.stringify({kids:S.kids,acads:S.acads,abs:S.abs});
+const newCode=()=>{const c='abcdefghjkmnpqrstuvwxyz23456789';let r='';const a=crypto.getRandomValues(new Uint8Array(12));a.forEach(v=>r+=c[v%c.length]);return r};
+const shareURL=()=>location.origin+location.pathname+'#f='+S.code;
+let pushT=null,syncState='',pulling=false;
+function setCloud(st){syncState=st;const b=document.getElementById('cloud');if(!b)return;b.textContent={ok:'☁️✓',busy:'☁️…',off:'☁️⚠️'}[st]||'☁️';b.className='cloud '+st}
+function queuePush(){if(!S.code)return;clearTimeout(pushT);setCloud('busy');pushT=setTimeout(push,700)}
+async function push(){try{const r=await fetch(DB+S.code+'.json',{method:'PUT',body:JSON.stringify({at:S.at,d:S.lastD})});if(!r.ok)throw 0;setCloud('ok')}catch(e){setCloud('off')}}
+async function pull(force){if(!S.code||pulling)return;pulling=true;
+  try{const r=await fetch(DB+S.code+'.json?x='+Date.now());if(!r.ok)throw 0;const j=await r.json();
+    if(j&&j.d&&(force||j.at>(S.at||0))){const d=JSON.parse(j.d);S.kids=d.kids||[];S.acads=d.acads||[];S.abs=d.abs||[];S.lastD=j.d;S.at=j.at;
+      if(kid!=='all'&&!kidOf(kid))kid='all';try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(!$('#ov').classList.contains('on'))render();setCloud('ok');return 'got'}
+    else if(!j||!j.d||j.at<(S.at||0)){await push();return 'pushed'}
+    setCloud('ok')}catch(e){setCloud('off')}finally{pulling=false}}
+function initSync(){
+  const m=location.hash.match(/f=([a-z0-9]{10,16})/);
+  let force=false;
+  if(m&&m[1]!==S.code){S.code=m[1];force=true}
+  if(!S.code){S.code=newCode()}
+  history.replaceState(null,'',shareURL());
+  try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+  pull(force).then(r=>{if(force&&r==='got')toast('☁️ 우리 가족 기록을 불러왔어요!')});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
+  window.addEventListener('focus',()=>pull());
+  window.addEventListener('hashchange',()=>{const m=location.hash.match(/f=([a-z0-9]{10,16})/);if(m&&m[1]!==S.code){S.code=m[1];pull(true)}});
+  setInterval(()=>{if(!document.hidden)pull()},30000);
+}
+async function shareLink(){const u=shareURL();
+  if(navigator.share){try{await navigator.share({title:'📒 학원 보강 수첩',text:'우리 집 학원 보강 수첩 링크예요',url:u});return}catch(e){if(e.name==='AbortError')return}}
+  try{await navigator.clipboard.writeText(u);toast('🔗 링크 복사했어요! 카톡에 붙여넣기')}catch(e){prompt('이 링크를 복사하세요',u)}}
 const $=s=>document.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -419,7 +455,12 @@ function openSet(){
     <div class="lbl">👧 아이 <span class="note">(2명 이상이면 위에 아이별 탭이 생겨요)</span></div>
     ${S.kids.map(k=>`<div class="row" style="margin-bottom:6px;align-items:center"><button class="chip" style="flex:none;font-size:22px" data-ke="${k.id}">${k.em}</button><input class="inp" data-kn="${k.id}" value="${esc(k.name)}" maxlength="10"><button class="sbtn gr" style="flex:none" data-kd="${k.id}">빼기</button></div>`).join('')}
     <div class="row"><input class="inp" id="nk" placeholder="아이 이름 (예: 연우)" maxlength="10"><button class="sbtn" style="flex:none" id="ak">➕ 추가</button></div>
-    <div class="lbl">💾 백업 <span class="note">(기록은 이 기기·이 브라우저에만 저장돼요. 폰을 바꾸거나 다른 기기에서 쓰려면 파일로 옮겨요)</span></div>
+    <div class="lbl">☁️ 온라인 저장 · 가족 링크</div>
+    <div class="share"><div>기록은 <b>온라인에 저장</b>돼요. 아래 <b>우리 가족 링크</b>로 열면 카톡·사파리·다른 폰 어디서든 같은 기록이 보여요.<br><span class="note">⚠️ 링크를 아는 사람은 누구나 볼 수 있으니 가족끼리만 나눠요</span></div>
+      <div class="code">우리 가족 코드 <b>${S.code}</b> <span class="st">${{ok:'✅ 저장됨',busy:'⏳ 저장 중',off:'⚠️ 인터넷 확인'}[syncState]||''}</span></div>
+      <button class="go" id="shr" style="margin-top:10px">🔗 우리 가족 링크 보내기 (카톡)</button>
+      <details style="margin-top:10px"><summary class="note">다른 가족 코드로 바꾸기</summary><div class="row" style="margin-top:6px"><input class="inp" id="cin" placeholder="코드 12자리" maxlength="16"><button class="sbtn" style="flex:none" id="cgo">불러오기</button></div></details></div>
+    <div class="lbl">💾 파일 백업 <span class="note">(혹시 몰라 파일로도 저장해 둘 수 있어요)</span></div>
     <div class="row"><button class="sbtn g" id="ex">📤 파일로 저장</button><button class="sbtn" id="im">📥 파일 불러오기</button></div>
     <input type="file" id="imf" accept=".json,application/json" style="display:none">
     <div class="lbl">🧹 정리</div>
@@ -431,6 +472,8 @@ function openSet(){
       S.kids=S.kids.filter(k=>k.id!==id);const rest=S.kids[0];S.acads.forEach(a=>{if(a.kid===id)a.kid=rest?rest.id:undefined});if(kid===id)kid='all';draw();render()});
     $('#ak').onclick=()=>{const n=$('#nk').value.trim();if(!n)return;const k={id:uid(),name:n,em:KIDEM[S.kids.length%KIDEM.length]};
       if(!S.kids.length)S.acads.forEach(a=>a.kid=k.id);S.kids.push(k);draw();render()};
+    $('#shr').onclick=shareLink;
+    $('#cgo').onclick=()=>{const v=$('#cin').value.trim().toLowerCase();if(!/^[a-z0-9]{10,16}$/.test(v)){toast('코드를 확인해 주세요');return}S.code=v;history.replaceState(null,'',shareURL());pull(true).then(r=>{toast(r==='got'?'☁️ 불러왔어요!':'이 코드엔 기록이 없어서 지금 기록을 올렸어요');closeSheet();render()})};
     $('#ex').onclick=()=>{const b=new Blob([JSON.stringify({app:'academy-makeup',v:1,at:new Date().toISOString(),data:{kids:S.kids,acads:S.acads,abs:S.abs}},null,1)],{type:'application/json'});
       const u=URL.createObjectURL(b),l=document.createElement('a');l.href=u;l.download=`학원보강수첩_${today()}.json`;l.click();setTimeout(()=>URL.revokeObjectURL(u),2000)};
     $('#im').onclick=()=>$('#imf').click();
@@ -445,9 +488,11 @@ document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{tab=b.datase
 $('#fabA').onclick=()=>openAbs(null,{date:tab==='cal'&&selDay?selDay:today()});
 $('#fabM').onclick=()=>openMk(null,tab==='cal'&&selDay&&selDay>=today()?selDay:null);
 $('#setBtn').onclick=openSet;
+$('#cloud').onclick=openSet;
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
 selDay=today();
 render();
+initSync();
 </script>
 </body>
 </html>
