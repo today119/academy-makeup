@@ -203,12 +203,13 @@ const DB='https://matchmaker-28187-default-rtdb.asia-southeast1.firebasedatabase
 const dataStr=()=>JSON.stringify({kids:S.kids,acads:S.acads,abs:S.abs});
 const newCode=()=>{const c='abcdefghjkmnpqrstuvwxyz23456789';let r='';const a=crypto.getRandomValues(new Uint8Array(12));a.forEach(v=>r+=c[v%c.length]);return r};
 const shareURL=()=>location.origin+location.pathname+'#f='+S.code;
-let pushT=null,syncState='',pulling=false;
+let pushT=null,syncState='',pulling=false,initAt=0;
 function setCloud(st){syncState=st;const b=document.getElementById('cloud');if(!b)return;b.textContent={ok:'☁️✓',busy:'☁️…',off:'☁️⚠️'}[st]||'☁️';b.className='cloud '+st}
 function queuePush(){if(!S.code)return;clearTimeout(pushT);setCloud('busy');pushT=setTimeout(push,700)}
 async function push(){try{const r=await fetch(DB+S.code+'.json',{method:'PUT',body:JSON.stringify({at:S.at,d:S.lastD})});if(!r.ok)throw 0;setCloud('ok')}catch(e){setCloud('off')}}
 async function pull(force){if(!S.code||pulling)return;pulling=true;
   try{const r=await fetch(DB+S.code+'.json?x='+Date.now());if(!r.ok)throw 0;const j=await r.json();
+    if(force===true&&(S.at||0)>initAt)force=false;
     if(j&&j.d&&(force||j.at>(S.at||0))){const d=JSON.parse(j.d);S.kids=d.kids||[];S.acads=d.acads||[];S.abs=d.abs||[];S.lastD=j.d;S.at=j.at;
       if(kid!=='all'&&!kidOf(kid))kid='all';try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(!$('#ov').classList.contains('on'))render();setCloud('ok');return 'got'}
     else if(!j||!j.d||j.at<(S.at||0)){await push();return 'pushed'}
@@ -218,7 +219,7 @@ function initSync(){
   let force=false;
   if(m&&m[1]!==S.code){S.code=m[1];force=true}
   if(!S.code){S.code=newCode()}
-  history.replaceState(null,'',shareURL());
+  history.replaceState(null,'',shareURL());initAt=S.at||0;
   try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
   pull(force).then(r=>{if(force&&r==='got')toast('☁️ 우리 가족 기록을 불러왔어요!')});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
@@ -473,7 +474,7 @@ function openSet(){
     $('#ak').onclick=()=>{const n=$('#nk').value.trim();if(!n)return;const k={id:uid(),name:n,em:KIDEM[S.kids.length%KIDEM.length]};
       if(!S.kids.length)S.acads.forEach(a=>a.kid=k.id);S.kids.push(k);draw();render()};
     $('#shr').onclick=shareLink;
-    $('#cgo').onclick=()=>{const v=$('#cin').value.trim().toLowerCase();if(!/^[a-z0-9]{10,16}$/.test(v)){toast('코드를 확인해 주세요');return}S.code=v;history.replaceState(null,'',shareURL());pull(true).then(r=>{toast(r==='got'?'☁️ 불러왔어요!':'이 코드엔 기록이 없어서 지금 기록을 올렸어요');closeSheet();render()})};
+    $('#cgo').onclick=()=>{const v=$('#cin').value.trim().toLowerCase();if(!/^[a-z0-9]{10,16}$/.test(v)){toast('코드를 확인해 주세요');return}S.code=v;history.replaceState(null,'',shareURL());pull('hard').then(r=>{toast(r==='got'?'☁️ 불러왔어요!':'이 코드엔 기록이 없어서 지금 기록을 올렸어요');closeSheet();render()})};
     $('#ex').onclick=()=>{const b=new Blob([JSON.stringify({app:'academy-makeup',v:1,at:new Date().toISOString(),data:{kids:S.kids,acads:S.acads,abs:S.abs}},null,1)],{type:'application/json'});
       const u=URL.createObjectURL(b),l=document.createElement('a');l.href=u;l.download=`학원보강수첩_${today()}.json`;l.click();setTimeout(()=>URL.revokeObjectURL(u),2000)};
     $('#im').onclick=()=>$('#imf').click();
