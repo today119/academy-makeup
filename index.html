@@ -142,6 +142,27 @@ h3 small{font-family:'Gaegu';font-size:15.6px;color:var(--sub);margin-left:4px}
 .mini{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .mini span{background:#fff;border-radius:99px;padding:4px 10px;font-size:15.6px;box-shadow:0 1px 4px #0001}
 @media(max-width:420px){.day{min-height:62px}.ev{width:20px;height:20px;font-size:16px}.ev.rg{display:none}.top h1{font-size:21px}.fab button{padding:13px 16px;font-size:19.2px}}
+.tb{display:inline-grid;place-items:center;background:var(--red);color:#fff;border-radius:99px;min-width:22px;height:22px;font-size:14px;margin-left:4px;padding:0 6px;vertical-align:2px;animation:bob 1.4s ease-in-out infinite}
+.postit{position:relative;background:#fff1a8;border-radius:6px 6px 22px 6px;padding:20px 14px 14px;margin:6px 4px 16px;box-shadow:0 8px 18px #e6b43a44, inset 0 -6px 0 #f5df7a;transform:rotate(-1deg);border:3px solid #ff5d73}
+.postit::before{content:'';position:absolute;top:-12px;left:50%;width:110px;height:24px;margin-left:-55px;background:#ff9fb3cc;transform:rotate(2deg);border-radius:3px}
+.postit.ok{border-color:#7fd67a;background:#eafbe8;box-shadow:0 6px 14px #7fd67a33;text-align:center}
+.postit.ok::before{background:#a8e6a3cc}
+.pt-h{font-family:'Gamja Flower';font-size:29px;color:#e0304d;display:flex;align-items:center;gap:8px}
+.postit.ok .pt-h{color:#2f9a5c;justify-content:center;font-size:25px}
+.pt-n{background:#ff3d5a;color:#fff;border-radius:99px;min-width:40px;height:40px;display:inline-grid;place-items:center;font-family:'Gaegu';font-weight:700;font-size:28px;animation:pulse 1.2s ease-in-out infinite;box-shadow:0 0 0 0 #ff3d5a88}
+@keyframes pulse{50%{transform:scale(1.12);box-shadow:0 0 0 8px #ff3d5a00}}
+.pt-s{color:#a0742a;font-size:17px;margin:2px 0 10px}
+.pt-i{display:flex;align-items:center;gap:10px;background:#fff;border-radius:16px;padding:10px;margin-top:8px;border-left:7px solid var(--c);box-shadow:0 2px 6px #0000000d;cursor:pointer}
+.pt-i .ic{font-size:36px;width:52px;height:52px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 18%,#fff);border-radius:16px;flex:none}
+.pt-i .tx{flex:1;min-width:0}
+.pt-i .tx b{font-family:'Gamja Flower';font-size:24px}
+.pt-i .d{display:block;font-size:16.5px;color:#7a6a62}
+.pt-i .dd{font-family:'Gaegu';font-weight:700;color:#e0304d;text-align:center;font-size:17px;line-height:1.1;flex:none}
+.pt-i .dd.hot{background:#ff3d5a;color:#fff;border-radius:12px;padding:4px 7px}
+.pt-i .sbtn{font-size:16px;line-height:1.15;padding:9px 11px;background:linear-gradient(135deg,#ffc94d,#f5a623);color:#fff;box-shadow:0 3px 8px #f5a62366}
+.pt-soon{margin-top:10px;font-size:17px;color:#8a6500}
+.soon{background:#fff8d6;border:2px dashed #f5c84a;border-radius:16px;padding:9px 12px;margin-bottom:12px;font-size:17px;color:#8a6500;display:flex;flex-wrap:wrap;gap:4px 10px}
+.soon.ok{background:#eafbe8;border-color:#a8e6a3;color:#2f9a5c}
 </style>
 </head>
 <body>
@@ -162,15 +183,15 @@ h3 small{font-family:'Gaegu';font-size:15.6px;color:var(--sub);margin-left:4px}
 
 <script>
 const KEY='academy_makeup_v1';
-const ICONS=['🎹','🎻','🎸','🥁','🎤','🎺','🎵','🏊','🥋','⚽','🏀','⚾','🎾','🏸','🏑','🤸','🩰','⛸️','🚴','🧗','🏓','🤺','🎨','✏️','🧶','🏺','📐','➗','🔢','🔤','🌍','📖','✍️','📚','🧪','🔬','🔭','💻','🤖','🧩','♟️','🧠','🗣️','🇨🇳','🇯🇵','🎭','📸','🍳','🌱','🦄','⭐'];
-const KW=[[/피아노|건반/,'🎹'],[/바이올린|첼로|현악|오케/,'🎻'],[/기타|우쿨/,'🎸'],[/드럼|난타/,'🥁'],[/보컬|노래|성악|합창/,'🎤'],[/플룻|트럼펫|관악|색소폰|클라리넷/,'🎺'],[/음악|리코더|오카리나/,'🎵'],[/수영/,'🏊'],[/태권|합기|유도|검도|주짓수|복싱/,'🥋'],[/축구|풋살/,'⚽'],[/농구/,'🏀'],[/야구/,'⚾'],[/테니스/,'🎾'],[/배드민턴/,'🏸'],[/하키/,'🏑'],[/체조|줄넘기|체육|짐/,'🤸'],[/발레|무용|댄스|방송/,'🩰'],[/스케이트|빙상|피겨/,'⛸️'],[/자전거|사이클/,'🚴'],[/클라이밍/,'🧗'],[/탁구/,'🏓'],[/펜싱/,'🤺'],[/미술|그림|드로잉/,'🎨'],[/서예|한자|글씨/,'✍️'],[/공예|도예|만들기/,'🏺'],[/수학|연산|사고력|셈/,'📐'],[/영어|파닉스/,'🔤'],[/중국/,'🇨🇳'],[/일본/,'🇯🇵'],[/국어|논술|독서|책/,'📖'],[/과학|실험/,'🧪'],[/코딩|컴퓨터|소프트/,'💻'],[/로봇/,'🤖'],[/바둑|체스|보드/,'♟️'],[/스피치|발표/,'🗣️'],[/연기|뮤지컬|연극/,'🎭'],[/요리|쿠킹/,'🍳'],[/학습지|구몬|눈높이|씽크|공부방/,'✏️'],[/웅변/,'🗣️']];
+const ICONS=['🎹','🎻','🎸','🥁','🎤','🎺','🎵','🏊','🥋','⚽','🏀','⚾','🎾','🏸','🏑','🤸','🩰','⛸️','🚴','🧗','🏓','🤺','🎨','✏️','🧶','🏺','📐','➗','🔢','🍎','🇺🇸','🇬🇧','🗽','🦉','💬','🔤','🌍','📖','✍️','📚','🧪','🔬','🔭','💻','🤖','🧩','♟️','🧠','🗣️','🇨🇳','🇯🇵','🎭','📸','🍳','🌱','🦄','⭐'];
+const KW=[[/피아노|건반/,'🎹'],[/바이올린|첼로|현악|오케/,'🎻'],[/기타|우쿨/,'🎸'],[/드럼|난타/,'🥁'],[/보컬|노래|성악|합창/,'🎤'],[/플룻|트럼펫|관악|색소폰|클라리넷/,'🎺'],[/음악|리코더|오카리나/,'🎵'],[/수영/,'🏊'],[/태권|합기|유도|검도|주짓수|복싱/,'🥋'],[/축구|풋살/,'⚽'],[/농구/,'🏀'],[/야구/,'⚾'],[/테니스/,'🎾'],[/배드민턴/,'🏸'],[/하키/,'🏑'],[/체조|줄넘기|체육|짐/,'🤸'],[/발레|무용|댄스|방송/,'🩰'],[/스케이트|빙상|피겨/,'⛸️'],[/자전거|사이클/,'🚴'],[/클라이밍/,'🧗'],[/탁구/,'🏓'],[/펜싱/,'🤺'],[/미술|그림|드로잉/,'🎨'],[/서예|한자|글씨/,'✍️'],[/공예|도예|만들기/,'🏺'],[/수학|연산|사고력|셈/,'📐'],[/영어|파닉스/,'🍎'],[/중국/,'🇨🇳'],[/일본/,'🇯🇵'],[/국어|논술|독서|책/,'📖'],[/과학|실험/,'🧪'],[/코딩|컴퓨터|소프트/,'💻'],[/로봇/,'🤖'],[/바둑|체스|보드/,'♟️'],[/스피치|발표/,'🗣️'],[/연기|뮤지컬|연극/,'🎭'],[/요리|쿠킹/,'🍳'],[/학습지|구몬|눈높이|씽크|공부방/,'✏️'],[/웅변/,'🗣️']];
 const COLORS=['#ff8fab','#ff9e5e','#ffc94d','#7fd67a','#4fc3b5','#6aa9ff','#9b8cff','#e58fff','#b08968','#8a9bb0'];
 const KIDEM=['🐰','🐻','🐱','🐶','🐥','🦊','🐼','🐯','🐨','🐹'];
 const REASONS=[['🤒','아파서'],['✈️','여행·가족 일'],['🏫','학교 행사'],['🏢','학원 사정'],['🎉','공휴일'],['😴','그냥 빠짐'],['✏️','기타']];
 const DOW='일월화수목금토';
 
-function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.acads)return s}catch(e){}const seed=[['피아노','🎹','#ff8fab'],['줄넘기','🤸','#ff9e5e'],['하키','🏑','#4fc3b5'],['영어','🔤','#6aa9ff'],['수영','🏊','#7fd67a'],['학습지','✏️','#9b8cff']];
-  return {kids:[],acads:seed.map(([name,ico,color])=>({id:uid(),name,ico,color,days:[],time:''})),abs:[],tab:'ac',kid:'all'}}
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.acads){if(!s.v2){s.acads.forEach(a=>{if(a.ico==='🔤'&&/영어/.test(a.name))a.ico='🍎'});s.v2=1}return s}}catch(e){}const seed=[['피아노','🎹','#ff8fab'],['줄넘기','🤸','#ff9e5e'],['하키','🏑','#4fc3b5'],['영어','🍎','#6aa9ff'],['수영','🏊','#7fd67a'],['학습지','✏️','#9b8cff']];
+  return {v2:1,kids:[],acads:seed.map(([name,ico,color])=>({id:uid(),name,ico,color,days:[],time:''})),abs:[],tab:'ac',kid:'all'}}
 function save(){S.tab=tab;S.kid=kid;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 const $=s=>document.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,9);
@@ -195,6 +216,7 @@ function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clea
 /* ---------- render ---------- */
 function render(){save();renderKids();renderSum();
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+  {const w=visAbs().filter(x=>status(x)==='wait').length,lb=$('#tabs [data-t=list]');lb.innerHTML='📋 보강 목록'+(w?`<span class="tb">${w}</span>`:'')}
   if(!S.acads.length&&tab!=='ac'){tab='ac'}
   ({cal:renderCal,list:renderList,ac:renderAc})[tab]();
 }
@@ -215,10 +237,21 @@ function eventsOn(d){const out=[];const A=visAbs();
   A.forEach(x=>{if(x.date===d)out.push({k:'ab',x});if(x.mk===d&&!x.none)out.push({k:'mk',x})});
   return out}
 function regularOn(d){const w=pd(d).getDay();return visAcads().filter(a=>(a.days||[]).includes(w)&&!visAbs().some(x=>x.acad===a.id&&x.date===d))}
+function pendHTML(big){const A=visAbs(),t=today();
+  const wait=A.filter(x=>status(x)==='wait').sort((a,b)=>a.date.localeCompare(b.date));
+  const e=new Date();e.setDate(e.getDate()+7);const es=ds(e);
+  const soon=A.filter(x=>status(x)==='plan'&&x.mk<=es).sort((a,b)=>a.mk.localeCompare(b.mk));
+  if(!wait.length&&!big){return soon.length?`<div class="soon">⭐ 곧 보강 · `+soon.map(x=>{const a=acOf(x.acad);return `<span>${a.ico} ${esc(a.name)} <b>${fmt(x.mk)}</b>${x.mkTime?' '+esc(x.mkTime):''}</span>`}).join('')+`</div>`:`<div class="soon ok">🎉 밀린 보강 없음! 아주 깔끔해요</div>`}
+  if(!wait.length)return `<div class="postit ok"><div class="pt-h">🎉 밀린 보강이 하나도 없어요!</div><div class="pt-s">결강이 생기면 여기에 빨갛게 붙어요</div></div>`;
+  return `<div class="postit"><div class="pt-h">🚨 보강 잡아야 해요! <span class="pt-n">${wait.length}</span></div><div class="pt-s">학원에 연락해서 보강 날짜를 잡아 주세요</div>`+
+    wait.map(x=>{const a=acOf(x.acad),n=Math.round((pd(t)-pd(x.date))/864e5);
+      return `<div class="pt-i" data-ed="${x.id}" style="--c:${a.color}"><span class="ic">${a.ico}</span><span class="tx"><b>${esc(a.name)}</b>${kidTag(a)}<span class="d">❌ ${fmt(x.date)} 결강${x.reason?' · '+esc(x.reason):''}${x.memo?'<br>📝 '+esc(x.memo):''}</span></span><span class="dd ${n>=14?'hot':''}">${n>0?n+'일째<br>밀림':n===0?'오늘<br>결강':'예정<br>'+(-n)+'일 뒤'}</span><button class="sbtn y" data-mk="${x.id}">보강<br>잡기</button></div>`}).join('')+
+    (soon.length?`<div class="pt-soon">⭐ 곧 보강: `+soon.map(x=>{const a=acOf(x.acad);return `${a.ico} ${esc(a.name)} <b>${fmt(x.mk)}</b>${x.mkTime?' '+esc(x.mkTime):''}`}).join(' · ')+`</div>`:'')+`</div>`;
+}
 function renderCal(){
   if(!ym){const n=new Date();ym=[n.getFullYear(),n.getMonth()]}
   const [y,m]=ym, first=new Date(y,m,1), start=new Date(y,m,1-first.getDay());
-  let h=`<div class="card"><div class="calh"><button id="pm">◀</button><b>${y}년 ${m+1}월</b><span><button class="today" id="tm">오늘</button> <button id="nm">▶</button></span></div><div class="grid">`;
+  let h=pendHTML()+`<div class="card"><div class="calh"><button id="pm">◀</button><b>${y}년 ${m+1}월</b><span><button class="today" id="tm">오늘</button> <button id="nm">▶</button></span></div><div class="grid">`;
   h+=[...DOW].map(c=>`<div class="dow">${c}</div>`).join('');
   const t=today();
   for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const s=ds(d);
@@ -237,6 +270,7 @@ function renderCal(){
   $('#tm').onclick=()=>{ym=null;selDay=today();renderCal()};
   document.querySelectorAll('.day').forEach(b=>b.onclick=()=>{selDay=b.dataset.d;renderCal();$('#dayCard').scrollIntoView({behavior:'smooth',block:'nearest'})});
   renderDay();
+  const pt=$('#main .postit');if(pt)bindItems(pt);
 }
 function renderDay(){const d=selDay||today();const box=$('#dayCard');
   const ev=eventsOn(d),rg=regularOn(d);
@@ -271,9 +305,7 @@ function renderList(){const A=visAbs(),t=today();
   const wait=A.filter(x=>status(x)==='wait').sort((a,b)=>a.date.localeCompare(b.date));
   const plan=A.filter(x=>status(x)==='plan').sort((a,b)=>a.mk.localeCompare(b.mk));
   const past=A.filter(x=>['done','none'].includes(status(x))).sort((a,b)=>(b.mk||b.date).localeCompare(a.mk||a.date));
-  let h=`<div class="card"><h3>🔴 보강 날짜를 아직 못 잡았어요 <small>${wait.length}개</small></h3>`;
-  h+=wait.length?wait.map(x=>itemHTML(x,'list')).join(''):`<div class="empty"><span class="big">🎉</span>밀린 보강이 하나도 없어요!</div>`;
-  h+=`</div><div class="card"><h3>⭐ 다가오는 보강 <small>${plan.length}개</small></h3>`;
+  let h=pendHTML(true)+`<div class="card"><h3>⭐ 다가오는 보강 <small>${plan.length}개</small></h3>`;
   h+=plan.length?plan.map(x=>itemHTML(x,'list')).join(''):`<div class="empty">잡혀 있는 보강이 없어요</div>`;
   h+=`</div><div class="card"><h3>✅ 지난 기록 <small>${past.length}개</small></h3>`;
   h+=past.length?past.slice(0,showAll?999:8).map(x=>itemHTML(x,'list')).join('')+(past.length>8&&!showAll?`<button class="sbtn gr" id="more" style="width:100%">더 보기 (${past.length-8}개)</button>`:''):`<div class="empty">아직 기록이 없어요</div>`;
