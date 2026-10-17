@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>학원 보강 수첩</title>
 <meta name="theme-color" content="#ffb4c6">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="보강 수첩">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📒</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Gamja+Flower&display=swap" rel="stylesheet">
 <style>
@@ -218,7 +223,9 @@ function initSync(){
   const m=location.hash.match(/f=([a-z0-9]{10,16})/);
   let force=false;
   if(m&&m[1]!==S.code){S.code=m[1];force=true}
+  const lost=!S.code&&!m&&matchMedia('(display-mode: standalone)').matches;
   if(!S.code){S.code=newCode()}
+  if(lost)setTimeout(()=>{openSet();toast('기록이 안 보이면 「다른 가족 코드로 바꾸기」에 코드를 넣어요')},800);
   history.replaceState(null,'',shareURL());initAt=S.at||0;
   try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
   pull(force).then(r=>{if(force&&r==='got')toast('☁️ 우리 가족 기록을 불러왔어요!')});
@@ -461,6 +468,11 @@ function openSet(){
       <div class="code">우리 가족 코드 <b>${S.code}</b> <span class="st">${{ok:'✅ 저장됨',busy:'⏳ 저장 중',off:'⚠️ 인터넷 확인'}[syncState]||''}</span></div>
       <button class="go" id="shr" style="margin-top:10px">🔗 우리 가족 링크 보내기 (카톡)</button>
       <details style="margin-top:10px"><summary class="note">다른 가족 코드로 바꾸기</summary><div class="row" style="margin-top:6px"><input class="inp" id="cin" placeholder="코드 12자리" maxlength="16"><button class="sbtn" style="flex:none" id="cgo">불러오기</button></div></details></div>
+    <div class="lbl">📱 홈 화면에 앱처럼 두기</div>
+    <div class="share" style="background:#fff4e0">${/KAKAOTALK/i.test(navigator.userAgent)?`카톡 안에서는 홈 화면에 못 넣어요. 먼저 👇<button class="go" id="extb" style="margin:6px 0">🌐 인터넷 앱으로 열기</button><span class="note">(안 되면 오른쪽 아래 ⋯/공유 → 「다른 브라우저로 열기」)</span><br>`:''}
+     <b>아이폰</b>: 사파리 아래 <b>공유 버튼(⬆️)</b> → <b>「홈 화면에 추가」</b><br>
+     <b>갤럭시</b>: 크롬/삼성인터넷 <b>⋮ 메뉴</b> → <b>「홈 화면에 추가」</b> (또는 「앱 설치」)<br>
+     <span class="note">📒 아이콘이 생기고 카톡이랑 따로 열려요. 기록은 우리 가족 코드로 그대로 보여요.</span></div>
     <div class="lbl">💾 파일 백업 <span class="note">(혹시 몰라 파일로도 저장해 둘 수 있어요)</span></div>
     <div class="row"><button class="sbtn g" id="ex">📤 파일로 저장</button><button class="sbtn" id="im">📥 파일 불러오기</button></div>
     <input type="file" id="imf" accept=".json,application/json" style="display:none">
@@ -474,6 +486,7 @@ function openSet(){
     $('#ak').onclick=()=>{const n=$('#nk').value.trim();if(!n)return;const k={id:uid(),name:n,em:KIDEM[S.kids.length%KIDEM.length]};
       if(!S.kids.length)S.acads.forEach(a=>a.kid=k.id);S.kids.push(k);draw();render()};
     $('#shr').onclick=shareLink;
+    const xb=$('#extb');if(xb)xb.onclick=()=>{location.href='kakaotalk://web/openExternal?url='+encodeURIComponent(shareURL())};
     $('#cgo').onclick=()=>{const v=$('#cin').value.trim().toLowerCase();if(!/^[a-z0-9]{10,16}$/.test(v)){toast('코드를 확인해 주세요');return}S.code=v;history.replaceState(null,'',shareURL());pull('hard').then(r=>{toast(r==='got'?'☁️ 불러왔어요!':'이 코드엔 기록이 없어서 지금 기록을 올렸어요');closeSheet();render()})};
     $('#ex').onclick=()=>{const b=new Blob([JSON.stringify({app:'academy-makeup',v:1,at:new Date().toISOString(),data:{kids:S.kids,acads:S.acads,abs:S.abs}},null,1)],{type:'application/json'});
       const u=URL.createObjectURL(b),l=document.createElement('a');l.href=u;l.download=`학원보강수첩_${today()}.json`;l.click();setTimeout(()=>URL.revokeObjectURL(u),2000)};
