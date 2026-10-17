@@ -170,6 +170,12 @@ h3 small{font-family:'Gaegu';font-size:15.6px;color:var(--sub);margin-left:4px}
 .soon.ok{background:#eafbe8;border-color:#a8e6a3;color:#2f9a5c}
 .cloud{height:40px;padding:0 10px;border-radius:14px;background:#fff9;font-size:16px;font-family:'Gaegu';font-weight:700;white-space:nowrap}
 .cloud.off{background:#ffe1e5}
+.kshare{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:12px;margin-bottom:12px;border-radius:16px;background:#fee500;color:#3a1d1d;font-family:'Gamja Flower';font-size:21px;box-shadow:0 3px 10px #e6cf0055}
+.kopt{display:flex;flex-wrap:wrap;gap:6px}
+.kopt label{display:flex;align-items:center;gap:5px;padding:7px 11px;border-radius:99px;background:#f6eee8;font-size:17px}
+.kopt input{width:18px;height:18px;accent-color:#ff8fab}
+.kprev{white-space:pre-wrap;word-break:break-all;background:#fffbe0;border:2px dashed #f1df8a;border-radius:16px;padding:12px;font-size:16px;line-height:1.5;max-height:42vh;overflow:auto;margin-top:10px;font-family:'Gaegu'}
+.kbtn{width:100%;padding:14px;border-radius:16px;background:#fee500;color:#3a1d1d;font-family:'Gamja Flower';font-size:22px;margin-top:12px}
 .share{background:#eef6ff;border-radius:16px;padding:12px;font-size:17px;line-height:1.45}
 .share .code{margin-top:8px;font-size:16px}.share .code b{font-size:20px;letter-spacing:1px;background:#fff;border-radius:8px;padding:1px 8px}
 .share .st{font-size:15px;color:#5a7}
@@ -177,7 +183,7 @@ h3 small{font-family:'Gaegu';font-size:15.6px;color:var(--sub);margin-left:4px}
 </head>
 <body>
 <header><div class="wrap">
-  <div class="top"><h1>📒 학원 보강 수첩<small>결강·보강 한눈에</small></h1><button class="cloud" id="cloud" title="온라인 저장">☁️</button><button class="ib" id="setBtn" title="설정">⚙️</button></div>
+  <div class="top"><h1>📒 학원 보강 수첩<small>결강·보강 한눈에</small></h1><button class="ib" id="kakao" title="카톡 공유">💬</button><button class="cloud" id="cloud" title="온라인 저장">☁️</button><button class="ib" id="setBtn" title="설정">⚙️</button></div>
   <div class="kids" id="kids"></div>
   <div class="sum" id="sum"></div>
 </div></header>
@@ -351,12 +357,12 @@ function renderList(){const A=visAbs(),t=today();
   const wait=A.filter(x=>status(x)==='wait').sort((a,b)=>a.date.localeCompare(b.date));
   const plan=A.filter(x=>status(x)==='plan').sort((a,b)=>a.mk.localeCompare(b.mk));
   const past=A.filter(x=>['done','none'].includes(status(x))).sort((a,b)=>(b.mk||b.date).localeCompare(a.mk||a.date));
-  let h=pendHTML(true)+`<div class="card"><h3>⭐ 다가오는 보강 <small>${plan.length}개</small></h3>`;
+  let h=`<button class="kshare" id="ksh">💬 카톡으로 가족에게 공유하기</button>`+pendHTML(true)+`<div class="card"><h3>⭐ 다가오는 보강 <small>${plan.length}개</small></h3>`;
   h+=plan.length?plan.map(x=>itemHTML(x,'list')).join(''):`<div class="empty">잡혀 있는 보강이 없어요</div>`;
   h+=`</div><div class="card"><h3>✅ 지난 기록 <small>${past.length}개</small></h3>`;
   h+=past.length?past.slice(0,showAll?999:8).map(x=>itemHTML(x,'list')).join('')+(past.length>8&&!showAll?`<button class="sbtn gr" id="more" style="width:100%">더 보기 (${past.length-8}개)</button>`:''):`<div class="empty">아직 기록이 없어요</div>`;
   h+=`</div>`;
-  $('#main').innerHTML=h;bindItems($('#main'));
+  $('#main').innerHTML=h;bindItems($('#main'));$('#ksh').onclick=openShare;
   const mo=$('#more');if(mo)mo.onclick=()=>{showAll=true;renderList()};
 }
 let showAll=false;
@@ -364,7 +370,7 @@ function renderAc(){const L=visAcads();
   let h=`<div class="card"><h3>🏫 우리 학원 <small>눌러서 고치기 · 빨간 숫자 = 밀린 보강</small></h3><div class="acgrid">`;
   h+=L.map(a=>{const ab=S.abs.filter(x=>x.acad===a.id),w=ab.filter(x=>status(x)==='wait').length;
     const k=S.kids.length>1?kidOf(a.kid):null;
-    return `<button class="acc" style="--c:${a.color}" data-ac="${a.id}">${w?`<span class="cnt">${w}</span>`:''}<div class="ic">${a.ico}</div><b>${esc(a.name)}</b>${k?`<div class="kd">${k.em} ${esc(k.name)}</div>`:''}<div class="dd">${(a.days||[]).length?(a.days.slice().sort().map(i=>DOW[i]).join('·')):'요일 미정'}${a.time?' '+esc(a.time):''}</div><div class="dd">결강 ${ab.length} · 보강 완료 ${ab.filter(x=>status(x)==='done').length}</div></button>`}).join('');
+    return `<button class="acc" style="--c:${a.color}" data-ac="${a.id}">${w?`<span class="cnt">${w}</span>`:''}<div class="ic">${a.ico}</div><b>${esc(a.name)}</b>${a.place?`<div class="dd">📍 ${esc(a.place)}</div>`:""}${k?`<div class="kd">${k.em} ${esc(k.name)}</div>`:''}<div class="dd">${(a.days||[]).length?(a.days.slice().sort().map(i=>DOW[i]).join('·')):'요일 미정'}${a.time?' '+esc(a.time):''}</div><div class="dd">결강 ${ab.length} · 보강 완료 ${ab.filter(x=>status(x)==='done').length}</div></button>`}).join('');
   h+=`<button class="acc add" id="addAc"><span>➕</span>학원 추가</button></div>`;
   if(!S.acads.length)h+=`<p class="note" style="margin-top:12px">👋 처음이죠? <b>학원 추가</b>를 눌러 다니는 학원을 넣어 주세요. 이름을 쓰면 귀여운 아이콘이 저절로 골라져요. 요일을 넣으면 달력에 원래 수업이 연하게 보여요.</p>`;
   h+=`</div>`;
@@ -389,11 +395,13 @@ function openAc(id){
     <div class="lbl">색깔</div><div class="colors">${COLORS.map(c=>`<button class="${a.color===c?'on':''}" data-co="${c}" style="background:${c}"></button>`).join('')}</div>
     <div class="lbl">가는 요일 <span class="note">(달력에 원래 수업이 연하게 보여요)</span></div><div class="days">${[...DOW].map((c,i)=>`<button class="${a.days.includes(i)?'on':''}" data-dw="${i}">${c}</button>`).join('')}</div>
     <div class="lbl">시간 (선택)</div><input class="inp" id="ft" value="${esc(a.time)}" placeholder="예) 4시~5시" maxlength="20">
+    <div class="lbl">📍 위치 (선택) <span class="note">(카톡 공유에 같이 들어가요)</span></div><input class="inp" id="fp" value="${esc(a.place||'')}" placeholder="예) 영종 하늘빌딩 3층" maxlength="40">
     <button class="go" id="ok">${id?'저장':'추가하기'}</button>${id?'<button class="del" id="dl">🗑️ 이 학원 지우기</button>':''}`;
     openSheet(h);
     const fn=$('#fn');
     fn.oninput=()=>{a.name=fn.value;if(a.auto){const s=suggest(a.name);if(s&&s!==a.ico){a.ico=s;const p=fn.selectionStart;draw();$('#fn').focus();$('#fn').setSelectionRange(p,p);return}}document.querySelector('.prev b').textContent=a.name||'학원 이름'};
     $('#ft').oninput=e=>a.time=e.target.value;
+    $('#fp').oninput=e=>a.place=e.target.value;
     document.querySelectorAll('[data-ic]').forEach(b=>b.onclick=()=>{a.ico=b.dataset.ic;a.auto=false;draw()});
     document.querySelectorAll('[data-co]').forEach(b=>b.onclick=()=>{a.color=b.dataset.co;draw()});
     document.querySelectorAll('[data-dw]').forEach(b=>b.onclick=()=>{const i=+b.dataset.dw;a.days=a.days.includes(i)?a.days.filter(x=>x!==i):[...a.days,i];draw()});
@@ -509,8 +517,42 @@ $('#setBtn').onclick=openSet;
 $('#cloud').onclick=openSet;
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
 
+/* ---------- 카톡 공유 ---------- */
+let KO=null;
+const mapURL=q=>'https://map.kakao.com/link/search/'+q.trim().replace(/\s+/g,'%20');
+function shareText(o){const A=visAbs(),t=today(),L=[];
+  const kn=kid!=='all'&&kidOf(kid)?kidOf(kid).name+' ':'';
+  const who=a=>S.kids.length>1&&kid==='all'&&kidOf(a.kid)?kidOf(a.kid).em+kidOf(a.kid).name+' ':'';
+  const plc=a=>a.place?`\n   📍 ${a.place}`+(o.map?`\n   🗺️ ${mapURL(a.place)}`:''):'';
+  L.push(`📒 ${kn}학원 보강 일정 (${fmt(t)} 기준)`);
+  if(o.up){const P=A.filter(x=>status(x)==='plan').sort((a,b)=>a.mk.localeCompare(b.mk));
+    L.push('','⭐ 다가오는 보강');
+    if(P.length)P.forEach(x=>{const a=acOf(x.acad);const tm=x.mkTime||a.time||'';L.push(`• ${a.ico} ${who(a)}${a.name} — ${fmt(x.mk)}${tm?' '+tm:''}${x.mk===t?' (오늘!)':dday(x.mk)==='내일'?' (내일)':''}`+plc(a))});
+    else L.push('  잡힌 보강 없어요')}
+  if(o.wait){const W=A.filter(x=>status(x)==='wait').sort((a,b)=>a.date.localeCompare(b.date));
+    if(W.length){L.push('','🔴 보강 날짜 아직 안 잡혔어요');W.forEach(x=>{const a=acOf(x.acad);L.push(`• ${a.ico} ${who(a)}${a.name} — ${fmt(x.date)} 결강${x.reason?' ('+x.reason+')':''}`)})}}
+  if(o.tt){const C=visAcads();L.push('','🏫 학원 시간표');
+    C.forEach(a=>{const dd=(a.days||[]).slice().sort().map(i=>DOW[i]).join('·');L.push(`• ${a.ico} ${who(a)}${a.name}${dd?' — '+dd:''}${a.time?' '+a.time:''}`+plc(a))})}
+  return L.join('\n')}
+function openShare(){if(!KO)KO={up:true,wait:true,tt:false,map:true};
+  const draw=()=>{const txt=shareText(KO);const noPlace=visAcads().every(a=>!a.place);
+    openSheet(`<h2>💬 카톡으로 공유<button class="x">✕</button></h2>
+    <div class="lbl">보낼 내용 고르기</div>
+    <div class="kopt">${[['up','⭐ 다가오는 보강'],['wait','🔴 밀린 결강'],['tt','🏫 학원 시간표'],['map','🗺️ 지도 링크']].map(([k,l])=>`<label><input type="checkbox" data-ko="${k}" ${KO[k]?'checked':''}>${l}</label>`).join('')}</div>
+    ${noPlace?'<p class="note">💡 「🏫 학원」 탭에서 학원을 눌러 📍위치를 넣으면 주소·지도도 같이 보내져요</p>':''}
+    <div class="kprev">${esc(txt)}</div>
+    <button class="kbtn" id="ksend">💬 카톡으로 보내기</button>
+    <button class="sbtn gr" id="kcopy" style="width:100%;margin-top:8px;padding:12px">📋 글 복사하기</button>`);
+    document.querySelectorAll('[data-ko]').forEach(c=>c.onchange=()=>{KO[c.dataset.ko]=c.checked;draw()});
+    $('#ksend').onclick=async()=>{if(navigator.share){try{await navigator.share({text:txt});return}catch(e){if(e.name==='AbortError')return}}
+      copyTxt(txt,'복사했어요! 카톡 채팅방에 붙여넣기 해 주세요')};
+    $('#kcopy').onclick=()=>copyTxt(txt,'📋 복사했어요! 카톡에 붙여넣기 해요')};
+  draw()}
+async function copyTxt(t,msg){try{await navigator.clipboard.writeText(t);toast(msg)}catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast(msg)}catch(_){prompt('복사해서 붙여넣어 주세요',t)}ta.remove()}}
+$('#kakao').onclick=openShare;
+
 /* ---------- 새 버전 자동 반영 ---------- */
-const APPVER='20261018b';
+const APPVER='20261018c';
 let verBusy=false;
 async function checkVer(auto){if(verBusy)return;verBusy=true;try{const r=await fetch(location.pathname+'?vc='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/const APPVER='([^']+)'/);
   if(m&&m[1]!==APPVER){if(auto&&($('#ov').classList.contains('on')||document.activeElement?.tagName==='INPUT'))return;await new Promise(r=>setTimeout(r,900));location.reload();return true}}catch(e){}finally{verBusy=false}return false}
