@@ -313,11 +313,12 @@ function renderCal(){
   $('#pm').onclick=()=>{ym=m?[y,m-1]:[y-1,11];renderCal()};
   $('#nm').onclick=()=>{ym=m<11?[y,m+1]:[y+1,0];renderCal()};
   $('#tm').onclick=()=>{ym=null;selDay=today();renderCal()};
-  document.querySelectorAll('.day').forEach(b=>b.onclick=()=>{selDay=b.dataset.d;renderCal();$('#dayCard').scrollIntoView({behavior:'smooth',block:'nearest'})});
+  document.querySelectorAll('.day').forEach(b=>b.onclick=()=>{selDay=b.dataset.d;renderCal();openDay(selDay)});
   renderDay();
   const pt=$('#main .postit');if(pt)bindItems(pt);
 }
-function renderDay(){const d=selDay||today();const box=$('#dayCard');
+function openDay(d){openSheet(`<h2>📅 이 날 일정<button class="x">✕</button></h2><div id="dayPop"></div>`);renderDay($('#dayPop'),d)}
+function renderDay(box,dd){const d=dd||selDay||today();box=box||$('#dayCard');
   const ev=eventsOn(d),rg=regularOn(d);
   let h=`<div class="dhead"><b>${fmt(d)} <span style="font-size:14px;color:var(--sub)">${dday(d)}</span></b><button class="sbtn" data-a="ab">❌ 결강</button><button class="sbtn y" data-a="mk">⭐ 보강</button></div>`;
   if(!ev.length&&!rg.length)h+=`<div class="empty"><span class="big">🌤️</span>이 날은 학원 일정이 없어요</div>`;
@@ -509,7 +510,7 @@ $('#cloud').onclick=openSet;
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
 
 /* ---------- 새 버전 자동 반영 ---------- */
-const APPVER='20261018a';
+const APPVER='20261018b';
 let verBusy=false;
 async function checkVer(auto){if(verBusy)return;verBusy=true;try{const r=await fetch(location.pathname+'?vc='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/const APPVER='([^']+)'/);
   if(m&&m[1]!==APPVER){if(auto&&($('#ov').classList.contains('on')||document.activeElement?.tagName==='INPUT'))return;await new Promise(r=>setTimeout(r,900));location.reload();return true}}catch(e){}finally{verBusy=false}return false}
