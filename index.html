@@ -473,6 +473,7 @@ function openSet(){
      <b>아이폰</b>: 사파리 아래 <b>공유 버튼(⬆️)</b> → <b>「홈 화면에 추가」</b><br>
      <b>갤럭시</b>: 크롬/삼성인터넷 <b>⋮ 메뉴</b> → <b>「홈 화면에 추가」</b> (또는 「앱 설치」)<br>
      <span class="note">📝 「보강 수첩」 아이콘이 생기고 카톡이랑 따로 열려요. 기록은 우리 가족 코드로 그대로 보여요.</span></div>
+    <button class="sbtn" id="rld" style="width:100%;margin-top:10px">🔄 새로고침 (최신 버전 받기)</button>
     <div class="lbl">💾 파일 백업 <span class="note">(혹시 몰라 파일로도 저장해 둘 수 있어요)</span></div>
     <div class="row"><button class="sbtn g" id="ex">📤 파일로 저장</button><button class="sbtn" id="im">📥 파일 불러오기</button></div>
     <input type="file" id="imf" accept=".json,application/json" style="display:none">
@@ -486,6 +487,7 @@ function openSet(){
     $('#ak').onclick=()=>{const n=$('#nk').value.trim();if(!n)return;const k={id:uid(),name:n,em:KIDEM[S.kids.length%KIDEM.length]};
       if(!S.kids.length)S.acads.forEach(a=>a.kid=k.id);S.kids.push(k);draw();render()};
     $('#shr').onclick=shareLink;
+    $('#rld').onclick=hardReload;
     const xb=$('#extb');if(xb)xb.onclick=()=>{location.href='kakaotalk://web/openExternal?url='+encodeURIComponent(shareURL())};
     $('#cgo').onclick=()=>{const v=$('#cin').value.trim().toLowerCase();if(!/^[a-z0-9]{10,16}$/.test(v)){toast('코드를 확인해 주세요');return}S.code=v;history.replaceState(null,'',shareURL());pull('hard').then(r=>{toast(r==='got'?'☁️ 불러왔어요!':'이 코드엔 기록이 없어서 지금 기록을 올렸어요');closeSheet();render()})};
     $('#ex').onclick=()=>{const b=new Blob([JSON.stringify({app:'academy-makeup',v:1,at:new Date().toISOString(),data:{kids:S.kids,acads:S.acads,abs:S.abs}},null,1)],{type:'application/json'});
@@ -504,6 +506,15 @@ $('#fabM').onclick=()=>openMk(null,tab==='cal'&&selDay&&selDay>=today()?selDay:n
 $('#setBtn').onclick=openSet;
 $('#cloud').onclick=openSet;
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
+
+/* ---------- 새 버전 자동 반영 ---------- */
+const APPVER='20261017b';
+let verBusy=false;
+async function checkVer(auto){if(verBusy)return;verBusy=true;try{const r=await fetch(location.pathname+'?vc='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/const APPVER='([^']+)'/);
+  if(m&&m[1]!==APPVER){if(auto&&($('#ov').classList.contains('on')||document.activeElement?.tagName==='INPUT'))return;await new Promise(r=>setTimeout(r,900));location.reload();return true}}catch(e){}finally{verBusy=false}return false}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkVer(true)});
+setInterval(()=>{if(!document.hidden)checkVer(true)},300000);
+function hardReload(){toast('🔄 새로 불러오는 중…');setTimeout(()=>location.reload(),500)}
 selDay=today();
 render();
 initSync();
