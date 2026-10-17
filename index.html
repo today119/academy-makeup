@@ -61,6 +61,10 @@ header{background:linear-gradient(135deg,#ffc2d1,#ffe0b5);padding:14px 0 12px;bo
 .ev.mk.dn{background:#dff6e7}
 .ev.mk.dn::after{content:'✅'}
 .ev.rg{opacity:.28;font-size:14px;width:17px;height:17px}
+.ev.mv{background:#e6f0ff}
+.ev.mv::after{content:'🔀';position:absolute;right:-5px;top:-5px;font-size:10px}
+.item .acts{display:flex;flex-direction:column;gap:5px}
+.item .mvn{font-size:14px;color:#3f7fd0}
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:15px;color:var(--sub);margin-top:10px;align-items:center}
 .legend .ev{transform:scale(.8)}
 /* day sheet & lists */
@@ -212,7 +216,7 @@ function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.acads)
 function save(){S.tab=tab;S.kid=kid;const d=dataStr();if(d!==S.lastD){S.lastD=d;S.at=Date.now();queuePush()}try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 /* ---------- 온라인 저장 (Firebase RTDB, 가족 코드) ---------- */
 const DB='https://matchmaker-28187-default-rtdb.asia-southeast1.firebasedatabase.app/academy_makeup/';
-const dataStr=()=>JSON.stringify({kids:S.kids,acads:S.acads,abs:S.abs});
+const dataStr=()=>JSON.stringify({kids:S.kids,acads:S.acads,abs:S.abs,moves:S.moves||[]});
 const newCode=()=>{const c='abcdefghjkmnpqrstuvwxyz23456789';let r='';const a=crypto.getRandomValues(new Uint8Array(12));a.forEach(v=>r+=c[v%c.length]);return r};
 const shareURL=()=>location.origin+location.pathname+'#f='+S.code;
 let pushT=null,syncState='',pulling=false,initAt=0;
@@ -222,7 +226,7 @@ async function push(){try{const r=await fetch(DB+S.code+'.json',{method:'PUT',bo
 async function pull(force){if(!S.code||pulling)return;pulling=true;
   try{const r=await fetch(DB+S.code+'.json?x='+Date.now());if(!r.ok)throw 0;const j=await r.json();
     if(force===true&&(S.at||0)>initAt)force=false;
-    if(j&&j.d&&(force||j.at>(S.at||0))){const d=JSON.parse(j.d);S.kids=d.kids||[];S.acads=d.acads||[];S.abs=d.abs||[];S.lastD=j.d;S.at=j.at;
+    if(j&&j.d&&(force||j.at>(S.at||0))){const d=JSON.parse(j.d);S.kids=d.kids||[];S.acads=d.acads||[];S.abs=d.abs||[];S.moves=d.moves||[];S.lastD=j.d;S.at=j.at;
       if(kid!=='all'&&!kidOf(kid))kid='all';try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(!$('#ov').classList.contains('on'))render();setCloud('ok');return 'got'}
     else if(!j||!j.d||j.at<(S.at||0)){await push();return 'pushed'}
     setCloud('ok')}catch(e){setCloud('off')}finally{pulling=false}}
@@ -248,6 +252,8 @@ const $=s=>document.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let S=load();
+if(!S.moves)S.moves=[];
+const addDays=(k,n)=>{const p=pd(k);p.setDate(p.getDate()+n);return ds(p)};
 let tab=S.tab||'cal', kid=S.kid||'all', ym=null, selDay=null;
 const pad=n=>String(n).padStart(2,'0');
 const ds=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -287,7 +293,11 @@ function renderSum(){const A=visAbs(),t=today();
 function eventsOn(d){const out=[];const A=visAbs();
   A.forEach(x=>{if(x.date===d)out.push({k:'ab',x});if(x.mk===d&&!x.none)out.push({k:'mk',x})});
   return out}
-function regularOn(d){const w=pd(d).getDay();return visAcads().filter(a=>(a.days||[]).includes(w)&&!visAbs().some(x=>x.acad===a.id&&x.date===d))}
+function regularOn(d){const w=pd(d).getDay(),M=S.moves||[],ab=id=>visAbs().some(x=>x.acad===id&&x.date===d);
+  const base=visAcads().filter(a=>(a.days||[]).includes(w)&&!ab(a.id)&&!M.some(m=>m.acad===a.id&&m.from===d));
+  const inn=M.filter(m=>m.to===d&&!ab(m.acad)).map(m=>{const a=visAcads().find(x=>x.id===m.acad);return a?{...a,mv:m}:null}).filter(Boolean);
+  return base.concat(inn)}
+const movedAway=d=>(S.moves||[]).filter(m=>m.from===d).map(m=>({m,a:visAcads().find(x=>x.id===m.acad)})).filter(o=>o.a);
 function pendHTML(big){const A=visAbs(),t=today();
   const wait=A.filter(x=>status(x)==='wait').sort((a,b)=>a.date.localeCompare(b.date));
   const e=new Date();e.setDate(e.getDate()+7);const es=ds(e);
@@ -311,9 +321,9 @@ function renderCal(){
     const cls=['day',d.getMonth()!==m?'out':'',s===t?'td':'',s===selDay?'sel':'',d.getDay()===0?'su':'',d.getDay()===6?'sa':''].join(' ');
     h+=`<button class="${cls}" data-d="${s}"><span class="n">${d.getDate()}</span><span class="evs">`+
       ev.map(e=>{const a=acOf(e.x.acad);return `<span class="ev ${e.k}${e.k==='mk'&&status(e.x)==='done'?' dn':''}" title="${esc(a.name)}">${a.ico}</span>`}).join('')+
-      rg.map(a=>`<span class="ev rg" title="${esc(a.name)} 정규">${a.ico}</span>`).join('')+`</span></button>`;
+      rg.map(a=>a.mv?`<span class="ev mv" title="${esc(a.name)} 옮긴 수업">${a.ico}</span>`:`<span class="ev rg" title="${esc(a.name)} 정규">${a.ico}</span>`).join('')+`</span></button>`;
   }
-  h+=`</div><div class="legend"><span><span class="ev ab">🎹</span> 결강</span><span><span class="ev mk">🎹</span> 보강 예정</span><span><span class="ev mk dn">🎹</span> 보강 끝</span><span><span class="ev rg" style="opacity:.4">🎹</span> 원래 수업</span></div></div>`;
+  h+=`</div><div class="legend"><span><span class="ev ab">🎹</span> 결강</span><span><span class="ev mk">🎹</span> 보강 예정</span><span><span class="ev mk dn">🎹</span> 보강 끝</span><span><span class="ev rg" style="opacity:.4">🎹</span> 원래 수업</span><span><span class="ev mv">🎹</span> 옮긴 수업</span></div></div>`;
   h+=`<div class="card" id="dayCard"></div>`;
   $('#main').innerHTML=h;
   $('#pm').onclick=()=>{ym=m?[y,m-1]:[y-1,11];renderCal()};
@@ -329,11 +339,16 @@ function renderDay(box,dd){const d=dd||selDay||today();box=box||$('#dayCard');
   let h=`<div class="dhead"><b>${fmt(d)} <span style="font-size:14px;color:var(--sub)">${dday(d)}</span></b><button class="sbtn" data-a="ab">❌ 결강</button><button class="sbtn y" data-a="mk">⭐ 보강</button></div>`;
   if(!ev.length&&!rg.length)h+=`<div class="empty"><span class="big">🌤️</span>이 날은 학원 일정이 없어요</div>`;
   ev.forEach(e=>h+=itemHTML(e.x,e.k));
-  rg.forEach(a=>h+=`<div class="item" style="--c:${a.color};opacity:.75"><div class="ic">${a.ico}</div><div class="tx"><b>${esc(a.name)}</b>${kidTag(a)}<div>원래 수업${a.time?' · '+esc(a.time):''}</div></div><button class="sbtn gr" data-q="${a.id}">못 가요</button></div>`);
+  rg.forEach(a=>h+=a.mv?`<div class="item" style="--c:${a.color}"><div class="ic">${a.ico}</div><div class="tx"><b>${esc(a.name)}</b>${kidTag(a)}<div>🔀 옮긴 수업${(a.mv.time||a.time)?' · '+esc(a.mv.time||a.time):''}</div><div class="mvn">원래 ${fmt(a.mv.from)} 수업</div></div><div class="acts"><button class="sbtn" data-mv2="${a.mv.id}">🔀 다시 옮기기</button><button class="sbtn gr" data-un="${a.mv.id}">↩️ 원래대로</button></div></div>`
+    :`<div class="item" style="--c:${a.color};opacity:.85"><div class="ic">${a.ico}</div><div class="tx"><b>${esc(a.name)}</b>${kidTag(a)}<div>원래 수업${a.time?' · '+esc(a.time):''}</div></div><div class="acts"><button class="sbtn" data-mv="${a.id}">🔀 다른 날로</button><button class="sbtn gr" data-q="${a.id}">못 가요</button></div></div>`);
+  movedAway(d).forEach(({m,a})=>h+=`<div class="item" style="--c:${a.color};opacity:.6"><div class="ic">${a.ico}</div><div class="tx"><b>${esc(a.name)}</b>${kidTag(a)}<div class="mvn">🔀 ${fmt(m.to)}${m.time?' '+esc(m.time):''}로 옮겼어요</div></div><button class="sbtn gr" data-un="${m.id}">↩️ 원래대로</button></div>`);
   box.innerHTML=h;
   box.querySelector('[data-a=ab]').onclick=()=>openAbs(null,{date:d});
   box.querySelector('[data-a=mk]').onclick=()=>openMk(null,d);
   box.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>openAbs(null,{date:d,acad:b.dataset.q}));
+  box.querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>openMove(b.dataset.mv,d));
+  box.querySelectorAll('[data-mv2]').forEach(b=>b.onclick=()=>{const m=S.moves.find(x=>x.id===b.dataset.mv2);if(m)openMove(m.acad,m.from,m)});
+  box.querySelectorAll('[data-un]').forEach(b=>b.onclick=()=>{const m=S.moves.find(x=>x.id===b.dataset.un);S.moves=S.moves.filter(x=>x.id!==b.dataset.un);toast('↩️ 원래 날짜로 돌렸어요');render();if(m&&$('#ov').classList.contains('on'))openDay(d)});
   bindItems(box);
 }
 function kidTag(a){if(S.kids.length<2||kid!=='all')return'';const k=kidOf(a.kid);return k?`<span class="tag t-none">${k.em} ${esc(k.name)}</span>`:''}
@@ -504,7 +519,7 @@ function openSet(){
       const u=URL.createObjectURL(b),l=document.createElement('a');l.href=u;l.download=`학원보강수첩_${today()}.json`;l.click();setTimeout(()=>URL.revokeObjectURL(u),2000)};
     $('#im').onclick=()=>$('#imf').click();
     $('#imf').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const j=JSON.parse(await f.text());const d=j.data||j;if(!Array.isArray(d.acads))throw 0;
-      S.kids=d.kids||[];S.acads=d.acads;S.abs=d.abs||[];kid='all';closeSheet();toast('불러왔어요!');render()}catch(_){toast('이 파일은 못 읽겠어요')}};
+      S.kids=d.kids||[];S.acads=d.acads;S.abs=d.abs||[];S.moves=d.moves||[];kid='all';closeSheet();toast('불러왔어요!');render()}catch(_){toast('이 파일은 못 읽겠어요')}};
     $('#clr').onclick=()=>{const c=new Date();c.setMonth(c.getMonth()-6);const cs=ds(c);const n=S.abs.length;
       S.abs=S.abs.filter(x=>!(['done','none'].includes(status(x))&&(x.mk||x.date)<cs));toast(`${n-S.abs.length}개 지웠어요`);render()};
   };draw();
@@ -516,6 +531,24 @@ $('#fabM').onclick=()=>openMk(null,tab==='cal'&&selDay&&selDay>=today()?selDay:n
 $('#setBtn').onclick=openSet;
 $('#cloud').onclick=openSet;
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
+
+/* ---------- 수업 옮기기 (그 주만) ---------- */
+function openMove(acId,from,old){const a=acOf(acId);if(!a)return;
+  let to=old?old.to:addDays(from,1),tm=old?(old.time||''):(a.time||'');
+  const draw=()=>{openSheet(`<h2>🔀 수업 옮기기<button class="x">✕</button></h2>
+    <div class="prev" style="background:color-mix(in srgb,${a.color} 15%,#fff)"><span class="ic">${a.ico}</span><b class="j" style="font-size:19px">${esc(a.name)} <span style="font-size:15px;color:var(--sub)">· 원래 ${fmt(from)}${a.time?' '+esc(a.time):''}</span></b></div>
+    <div class="lbl">📅 이번엔 언제 가요?</div><input type="date" class="inp" id="mvd" value="${to}">
+    <div class="chips" style="margin-top:6px">${[-2,-1,1,2,3].map(n=>{const k=addDays(from,n);return `<button class="chip ${k===to?'on':''}" data-to="${k}">${fmt(k)}</button>`}).join('')}</div>
+    <div class="lbl">⏰ 시간</div><input class="inp" id="mvt" value="${esc(tm)}" placeholder="예) 5시~6시" maxlength="20">
+    <p class="note">이번 한 번만 옮겨져요. 원래 요일·시간은 그대로예요. (매주 바뀌면 「🏫 학원」에서 요일을 고쳐요)</p>
+    <button class="go" id="mok">${old?'저장':'옮기기'}</button>`);
+    $('#mvd').onchange=e=>{to=e.target.value;draw()};$('#mvt').oninput=e=>tm=e.target.value;
+    document.querySelectorAll('[data-to]').forEach(b=>b.onclick=()=>{tm=$('#mvt').value;to=b.dataset.to;draw()});
+    $('#mok').onclick=()=>{tm=$('#mvt').value.trim();if(!to){toast('날짜를 골라 주세요');return}
+      S.moves=(S.moves||[]).filter(m=>!(old&&m.id===old.id)&&!(m.acad===acId&&m.from===from));
+      if(to!==from||(tm&&tm!==a.time))S.moves.push({id:old?old.id:uid(),acad:acId,from,to,time:tm&&tm!==a.time?tm:''});
+      selDay=to;const p=pd(to);ym=[p.getFullYear(),p.getMonth()];closeSheet();render();toast(`🔀 ${a.ico} ${a.name} ${fmt(to)}${tm?' '+tm:''}로 옮겼어요`)};
+  };draw()}
 
 /* ---------- 카톡 공유 ---------- */
 let KO=null;
@@ -529,6 +562,8 @@ function shareText(o){const A=visAbs(),t=today(),L=[];
     L.push('','⭐ 다가오는 보강');
     if(P.length)P.forEach(x=>{const a=acOf(x.acad);const tm=x.mkTime||a.time||'';L.push(`• ${a.ico} ${who(a)}${a.name} — ${fmt(x.mk)}${tm?' '+tm:''}${x.mk===t?' (오늘!)':dday(x.mk)==='내일'?' (내일)':''}`+plc(a))});
     else L.push('  잡힌 보강 없어요')}
+  if(o.up){const MV=(S.moves||[]).filter(m=>m.to>=t&&visAcads().some(a=>a.id===m.acad)).sort((a,b)=>a.to.localeCompare(b.to));
+    if(MV.length){L.push('','🔀 바뀐 수업 날짜');MV.forEach(m=>{const a=acOf(m.acad),tm=m.time||a.time||'';L.push(`• ${a.ico} ${who(a)}${a.name} — ${fmt(m.from)} → ${fmt(m.to)}${tm?' '+tm:''}`+plc(a))})}}
   if(o.wait){const W=A.filter(x=>status(x)==='wait').sort((a,b)=>a.date.localeCompare(b.date));
     if(W.length){L.push('','🔴 보강 날짜 아직 안 잡혔어요');W.forEach(x=>{const a=acOf(x.acad);L.push(`• ${a.ico} ${who(a)}${a.name} — ${fmt(x.date)} 결강${x.reason?' ('+x.reason+')':''}`)})}}
   if(o.tt){const C=visAcads();L.push('','🏫 학원 시간표');
@@ -552,7 +587,7 @@ async function copyTxt(t,msg){try{await navigator.clipboard.writeText(t);toast(m
 $('#kakao').onclick=openShare;
 
 /* ---------- 새 버전 자동 반영 ---------- */
-const APPVER='20261018c';
+const APPVER='20261018d';
 let verBusy=false;
 async function checkVer(auto){if(verBusy)return;verBusy=true;try{const r=await fetch(location.pathname+'?vc='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/const APPVER='([^']+)'/);
   if(m&&m[1]!==APPVER){if(auto&&($('#ov').classList.contains('on')||document.activeElement?.tagName==='INPUT'))return;await new Promise(r=>setTimeout(r,900));location.reload();return true}}catch(e){}finally{verBusy=false}return false}
