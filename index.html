@@ -192,6 +192,7 @@ h3 small{font-family:'Gaegu';font-size:15.6px;color:var(--sub);margin-left:4px}
 <div class="toast" id="toast"></div>
 
 <script>
+window.addEventListener('error',e=>{try{const b=document.createElement('div');b.style.cssText='position:fixed;left:8px;right:8px;bottom:8px;z-index:999;background:#fff0f0;border:2px solid #f66;border-radius:12px;padding:8px;font:14px sans-serif;color:#c00';b.textContent='⚠️ 오류: '+e.message+' ('+(e.lineno||'')+') — 이 화면을 캡처해서 보내주세요';b.onclick=()=>b.remove();document.body.appendChild(b)}catch(_){}});
 const KEY='academy_makeup_v1';
 const ICONS=['🎹','🎻','🎸','🥁','🎤','🎺','🎵','🏊','🥋','⚽','🏀','⚾','🎾','🏸','🏑','🤸','🩰','⛸️','🚴','🧗','🏓','🤺','🎨','✏️','🧶','🏺','📐','➗','🔢','🍎','🇺🇸','🇬🇧','🗽','🦉','💬','🔤','🌍','📖','✍️','📚','🧪','🔬','🔭','💻','🤖','🧩','♟️','🧠','🗣️','🇨🇳','🇯🇵','🎭','📸','🍳','🌱','🦄','⭐'];
 const KW=[[/피아노|건반/,'🎹'],[/바이올린|첼로|현악|오케/,'🎻'],[/기타|우쿨/,'🎸'],[/드럼|난타/,'🥁'],[/보컬|노래|성악|합창/,'🎤'],[/플룻|트럼펫|관악|색소폰|클라리넷/,'🎺'],[/음악|리코더|오카리나/,'🎵'],[/수영/,'🏊'],[/태권|합기|유도|검도|주짓수|복싱/,'🥋'],[/축구|풋살/,'⚽'],[/농구/,'🏀'],[/야구/,'⚾'],[/테니스/,'🎾'],[/배드민턴/,'🏸'],[/하키/,'🏑'],[/체조|줄넘기|체육|짐/,'🤸'],[/발레|무용|댄스|방송/,'🩰'],[/스케이트|빙상|피겨/,'⛸️'],[/자전거|사이클/,'🚴'],[/클라이밍/,'🧗'],[/탁구/,'🏓'],[/펜싱/,'🤺'],[/미술|그림|드로잉/,'🎨'],[/서예|한자|글씨/,'✍️'],[/공예|도예|만들기/,'🏺'],[/수학|연산|사고력|셈/,'📐'],[/영어|파닉스/,'🍎'],[/중국/,'🇨🇳'],[/일본/,'🇯🇵'],[/국어|논술|독서|책/,'📖'],[/과학|실험/,'🧪'],[/코딩|컴퓨터|소프트/,'💻'],[/로봇/,'🤖'],[/바둑|체스|보드/,'♟️'],[/스피치|발표/,'🗣️'],[/연기|뮤지컬|연극/,'🎭'],[/요리|쿠킹/,'🍳'],[/학습지|구몬|눈높이|씽크|공부방/,'✏️'],[/웅변/,'🗣️']];
@@ -508,7 +509,7 @@ $('#cloud').onclick=openSet;
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
 
 /* ---------- 새 버전 자동 반영 ---------- */
-const APPVER='20261017b';
+const APPVER='20261018a';
 let verBusy=false;
 async function checkVer(auto){if(verBusy)return;verBusy=true;try{const r=await fetch(location.pathname+'?vc='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/const APPVER='([^']+)'/);
   if(m&&m[1]!==APPVER){if(auto&&($('#ov').classList.contains('on')||document.activeElement?.tagName==='INPUT'))return;await new Promise(r=>setTimeout(r,900));location.reload();return true}}catch(e){}finally{verBusy=false}return false}
