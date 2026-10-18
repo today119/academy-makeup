@@ -39,6 +39,9 @@ header{background:linear-gradient(135deg,#ffc2d1,#ffe0b5);padding:14px 0 12px;bo
 .tabs button.on{background:#ffe3ea;color:#d94b72}
 .card{background:var(--card);border-radius:22px;padding:14px;box-shadow:0 3px 12px #f0c9b533;margin-bottom:12px}
 /* calendar */
+.calc{border:3px solid #ffb3c6;box-shadow:0 8px 20px #ff9fb333;padding:12px 8px}
+.calc .calh b{font-size:30px;color:#d94b72}
+.calc .day{min-height:84px}
 .calh{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .calh b{font-family:'Gamja Flower';font-size:25.6px}
 .calh button{width:38px;height:38px;border-radius:12px;background:#fff1ea;font-size:18px}
@@ -150,7 +153,7 @@ h3 small{font-family:'Gaegu';font-size:15.6px;color:var(--sub);margin-left:4px}
 .note{font-size:15px;color:var(--sub);line-height:1.5}
 .mini{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .mini span{background:#fff;border-radius:99px;padding:4px 10px;font-size:15.6px;box-shadow:0 1px 4px #0001}
-@media(max-width:420px){.day{min-height:62px}.ev{width:20px;height:20px;font-size:16px}.ev.rg{display:none}.top h1{font-size:21px}.fab button{padding:13px 16px;font-size:19.2px}}
+@media(max-width:420px){.calc{padding:10px 5px}.day,.calc .day{min-height:72px}.ev{width:20px;height:20px;font-size:16px}.ev.rg{opacity:.4;width:15px;height:15px;font-size:12px}.top h1{font-size:21px}.fab button{padding:13px 16px;font-size:19.2px}}
 .tb{display:inline-grid;place-items:center;background:var(--red);color:#fff;border-radius:99px;min-width:22px;height:22px;font-size:14px;margin-left:4px;padding:0 6px;vertical-align:2px;animation:bob 1.4s ease-in-out infinite}
 .postit{position:relative;background:#fff1a8;border-radius:6px 6px 22px 6px;padding:20px 14px 14px;margin:6px 4px 16px;box-shadow:0 8px 18px #e6b43a44, inset 0 -6px 0 #f5df7a;transform:rotate(-1deg);border:3px solid #ff5d73}
 .postit::before{content:'';position:absolute;top:-12px;left:50%;width:110px;height:24px;margin-left:-55px;background:#ff9fb3cc;transform:rotate(2deg);border-radius:3px}
@@ -171,6 +174,7 @@ h3 small{font-family:'Gaegu';font-size:15.6px;color:var(--sub);margin-left:4px}
 .pt-i .sbtn{font-size:16px;line-height:1.15;padding:9px 11px;background:linear-gradient(135deg,#ffc94d,#f5a623);color:#fff;box-shadow:0 3px 8px #f5a62366}
 .pt-soon{margin-top:10px;font-size:17px;color:#8a6500}
 .soon{background:#fff8d6;border:2px dashed #f5c84a;border-radius:16px;padding:9px 12px;margin-bottom:12px;font-size:17px;color:#8a6500;display:flex;flex-wrap:wrap;gap:4px 10px}
+.soon.warn{width:100%;background:#ffe9ec;border:2px solid #ff8a9b;color:#c8324a;font:inherit;font-size:17px;text-align:left;align-items:center;cursor:pointer}
 .soon.ok{background:#eafbe8;border-color:#a8e6a3;color:#2f9a5c}
 .cloud{height:40px;padding:0 10px;border-radius:14px;background:#fff9;font-size:16px;font-family:'Gaegu';font-weight:700;white-space:nowrap}
 .cloud.off{background:#ffe1e5}
@@ -312,7 +316,7 @@ function pendHTML(big){const A=visAbs(),t=today();
 function renderCal(){
   if(!ym){const n=new Date();ym=[n.getFullYear(),n.getMonth()]}
   const [y,m]=ym, first=new Date(y,m,1), start=new Date(y,m,1-first.getDay());
-  let h=pendHTML()+`<div class="card"><div class="calh"><button id="pm">◀</button><b>${y}년 ${m+1}월</b><span><button class="today" id="tm">오늘</button> <button id="nm">▶</button></span></div><div class="grid">`;
+  let h=`<div class="card calc"><div class="calh"><button id="pm">◀</button><b>${y}년 ${m+1}월</b><span><button class="today" id="tm">오늘</button> <button id="nm">▶</button></span></div><div class="grid">`;
   h+=[...DOW].map(c=>`<div class="dow">${c}</div>`).join('');
   const t=today();
   for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const s=ds(d);
@@ -324,15 +328,22 @@ function renderCal(){
       rg.map(a=>a.mv?`<span class="ev mv" title="${esc(a.name)} 옮긴 수업">${a.ico}</span>`:`<span class="ev rg" title="${esc(a.name)} 정규">${a.ico}</span>`).join('')+`</span></button>`;
   }
   h+=`</div><div class="legend"><span><span class="ev ab">🎹</span> 결강</span><span><span class="ev mk">🎹</span> 보강 예정</span><span><span class="ev mk dn">🎹</span> 보강 끝</span><span><span class="ev rg" style="opacity:.4">🎹</span> 원래 수업</span><span><span class="ev mv">🎹</span> 옮긴 수업</span></div></div>`;
-  h+=`<div class="card" id="dayCard"></div>`;
+  h+=miniPend()+`<div class="card" id="dayCard"></div>`;
   $('#main').innerHTML=h;
   $('#pm').onclick=()=>{ym=m?[y,m-1]:[y-1,11];renderCal()};
   $('#nm').onclick=()=>{ym=m<11?[y,m+1]:[y+1,0];renderCal()};
   $('#tm').onclick=()=>{ym=null;selDay=today();renderCal()};
   document.querySelectorAll('.day').forEach(b=>b.onclick=()=>{selDay=b.dataset.d;renderCal();openDay(selDay)});
   renderDay();
-  const pt=$('#main .postit');if(pt)bindItems(pt);
+  const gw=$('#goW');if(gw)gw.onclick=()=>{tab='list';render();scrollTo(0,0)};
 }
+function miniPend(){const A=visAbs(),n=A.filter(x=>status(x)==='wait').length;
+  const e=new Date();e.setDate(e.getDate()+7);const es=ds(e);
+  const soon=A.filter(x=>status(x)==='plan'&&x.mk>=today()&&x.mk<=es).sort((a,b)=>a.mk.localeCompare(b.mk));
+  let h='';
+  if(n)h+=`<button class="soon warn" id="goW">🚨 보강 날짜 잡을 것 <b>${n}개</b><span style="margin-left:auto">보강 목록 ›</span></button>`;
+  if(soon.length)h+=`<div class="soon">⭐ 곧 보강 · `+soon.map(x=>{const a=acOf(x.acad);return `<span>${a.ico} ${esc(a.name)} <b>${fmt(x.mk)}</b>${x.mkTime?' '+esc(x.mkTime):''}</span>`}).join('')+`</div>`;
+  return h}
 function openDay(d){openSheet(`<h2>📅 이 날 일정<button class="x">✕</button></h2><div id="dayPop"></div>`);renderDay($('#dayPop'),d)}
 function renderDay(box,dd){const d=dd||selDay||today();box=box||$('#dayCard');
   const ev=eventsOn(d),rg=regularOn(d);
@@ -587,7 +598,7 @@ async function copyTxt(t,msg){try{await navigator.clipboard.writeText(t);toast(m
 $('#kakao').onclick=openShare;
 
 /* ---------- 새 버전 자동 반영 ---------- */
-const APPVER='20261018d';
+const APPVER='20261018e';
 let verBusy=false;
 async function checkVer(auto){if(verBusy)return;verBusy=true;try{const r=await fetch(location.pathname+'?vc='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/const APPVER='([^']+)'/);
   if(m&&m[1]!==APPVER){if(auto&&($('#ov').classList.contains('on')||document.activeElement?.tagName==='INPUT'))return;await new Promise(r=>setTimeout(r,900));location.reload();return true}}catch(e){}finally{verBusy=false}return false}
