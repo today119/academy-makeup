@@ -66,6 +66,7 @@ header{background:linear-gradient(135deg,#ffc2d1,#ffe0b5);padding:14px 0 12px;bo
 .ev.rg{opacity:.28;font-size:14px;width:17px;height:17px}
 .ev.mv{background:#e6f0ff}
 .ev.mv::after{content:'🔀';position:absolute;right:-5px;top:-5px;font-size:10px}
+.ev.mv.tm{background:#fff4d6}.ev.mv.tm::after{content:'⏰'}
 .item .acts{display:flex;flex-direction:column;gap:5px}
 .item .mvn{font-size:14px;color:#3f7fd0}
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:15px;color:var(--sub);margin-top:10px;align-items:center}
@@ -301,7 +302,7 @@ function regularOn(d){const w=pd(d).getDay(),M=S.moves||[],ab=id=>visAbs().some(
   const base=visAcads().filter(a=>(a.days||[]).includes(w)&&!ab(a.id)&&!M.some(m=>m.acad===a.id&&m.from===d));
   const inn=M.filter(m=>m.to===d&&!ab(m.acad)).map(m=>{const a=visAcads().find(x=>x.id===m.acad);return a?{...a,mv:m}:null}).filter(Boolean);
   return base.concat(inn)}
-const movedAway=d=>(S.moves||[]).filter(m=>m.from===d).map(m=>({m,a:visAcads().find(x=>x.id===m.acad)})).filter(o=>o.a);
+const movedAway=d=>(S.moves||[]).filter(m=>m.from===d&&m.to!==d).map(m=>({m,a:visAcads().find(x=>x.id===m.acad)})).filter(o=>o.a);
 function pendHTML(big){const A=visAbs(),t=today();
   const wait=A.filter(x=>status(x)==='wait').sort((a,b)=>a.date.localeCompare(b.date));
   const e=new Date();e.setDate(e.getDate()+7);const es=ds(e);
@@ -325,7 +326,7 @@ function renderCal(){
     const cls=['day',d.getMonth()!==m?'out':'',s===t?'td':'',s===selDay?'sel':'',d.getDay()===0?'su':'',d.getDay()===6?'sa':''].join(' ');
     h+=`<button class="${cls}" data-d="${s}"><span class="n">${d.getDate()}</span><span class="evs">`+
       ev.map(e=>{const a=acOf(e.x.acad);return `<span class="ev ${e.k}${e.k==='mk'&&status(e.x)==='done'?' dn':''}" title="${esc(a.name)}">${a.ico}</span>`}).join('')+
-      rg.map(a=>a.mv?`<span class="ev mv" title="${esc(a.name)} 옮긴 수업">${a.ico}</span>`:`<span class="ev rg" title="${esc(a.name)} 정규">${a.ico}</span>`).join('')+`</span></button>`;
+      rg.map(a=>a.mv?`<span class="ev mv${a.mv.to===a.mv.from?' tm':''}" title="${esc(a.name)} ${a.mv.to===a.mv.from?'시간 바뀜':'옮긴 수업'}">${a.ico}</span>`:`<span class="ev rg" title="${esc(a.name)} 정규">${a.ico}</span>`).join('')+`</span></button>`;
   }
   h+=`</div><div class="legend"><span><span class="ev ab">🎹</span> 결강</span><span><span class="ev mk">🎹</span> 보강 예정</span><span><span class="ev mk dn">🎹</span> 보강 끝</span><span><span class="ev rg" style="opacity:.4">🎹</span> 원래 수업</span><span><span class="ev mv">🎹</span> 옮긴 수업</span></div></div>`;
   h+=miniPend()+`<div class="card" id="dayCard"></div>`;
@@ -350,14 +351,17 @@ function renderDay(box,dd){const d=dd||selDay||today();box=box||$('#dayCard');
   let h=`<div class="dhead"><b>${fmt(d)} <span style="font-size:14px;color:var(--sub)">${dday(d)}</span></b><button class="sbtn" data-a="ab">❌ 결강</button><button class="sbtn y" data-a="mk">⭐ 보강</button></div>`;
   if(!ev.length&&!rg.length)h+=`<div class="empty"><span class="big">🌤️</span>이 날은 학원 일정이 없어요</div>`;
   ev.forEach(e=>h+=itemHTML(e.x,e.k));
-  rg.forEach(a=>h+=a.mv?`<div class="item" style="--c:${a.color}"><div class="ic">${a.ico}</div><div class="tx"><b>${esc(a.name)}</b>${kidTag(a)}<div>🔀 옮긴 수업${(a.mv.time||a.time)?' · '+esc(a.mv.time||a.time):''}</div><div class="mvn">원래 ${fmt(a.mv.from)} 수업</div></div><div class="acts"><button class="sbtn" data-mv2="${a.mv.id}">🔀 다시 옮기기</button><button class="sbtn gr" data-un="${a.mv.id}">↩️ 원래대로</button></div></div>`
-    :`<div class="item" style="--c:${a.color};opacity:.85"><div class="ic">${a.ico}</div><div class="tx"><b>${esc(a.name)}</b>${kidTag(a)}<div>원래 수업${a.time?' · '+esc(a.time):''}</div></div><div class="acts"><button class="sbtn" data-mv="${a.id}">🔀 다른 날로</button><button class="sbtn gr" data-q="${a.id}">못 가요</button></div></div>`);
+  rg.forEach(a=>h+=a.mv&&a.mv.to===a.mv.from?`<div class="item" style="--c:${a.color}"><div class="ic">${a.ico}</div><div class="tx"><b>${esc(a.name)}</b>${kidTag(a)}<div>⏰ 이 날만 <b>${esc(a.mv.time)}</b></div><div class="mvn">원래 ${a.time?esc(a.time):'시간'}</div></div><div class="acts"><button class="sbtn" data-tm2="${a.mv.id}">⏰ 시간 고치기</button><button class="sbtn gr" data-un="${a.mv.id}">↩️ 원래대로</button></div></div>`
+    :a.mv?`<div class="item" style="--c:${a.color}"><div class="ic">${a.ico}</div><div class="tx"><b>${esc(a.name)}</b>${kidTag(a)}<div>🔀 옮긴 수업${(a.mv.time||a.time)?' · '+esc(a.mv.time||a.time):''}</div><div class="mvn">원래 ${fmt(a.mv.from)} 수업</div></div><div class="acts"><button class="sbtn" data-mv2="${a.mv.id}">🔀 다시 옮기기</button><button class="sbtn gr" data-un="${a.mv.id}">↩️ 원래대로</button></div></div>`
+    :`<div class="item" style="--c:${a.color};opacity:.85"><div class="ic">${a.ico}</div><div class="tx"><b>${esc(a.name)}</b>${kidTag(a)}<div>원래 수업${a.time?' · '+esc(a.time):''}</div></div><div class="acts"><button class="sbtn" data-tm="${a.id}">⏰ 시간만</button><button class="sbtn" data-mv="${a.id}">🔀 다른 날로</button><button class="sbtn gr" data-q="${a.id}">못 가요</button></div></div>`);
   movedAway(d).forEach(({m,a})=>h+=`<div class="item" style="--c:${a.color};opacity:.6"><div class="ic">${a.ico}</div><div class="tx"><b>${esc(a.name)}</b>${kidTag(a)}<div class="mvn">🔀 ${fmt(m.to)}${m.time?' '+esc(m.time):''}로 옮겼어요</div></div><button class="sbtn gr" data-un="${m.id}">↩️ 원래대로</button></div>`);
   box.innerHTML=h;
   box.querySelector('[data-a=ab]').onclick=()=>openAbs(null,{date:d});
   box.querySelector('[data-a=mk]').onclick=()=>openMk(null,d);
   box.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>openAbs(null,{date:d,acad:b.dataset.q}));
   box.querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>openMove(b.dataset.mv,d));
+  box.querySelectorAll('[data-tm]').forEach(b=>b.onclick=()=>openTime(b.dataset.tm,d));
+  box.querySelectorAll('[data-tm2]').forEach(b=>b.onclick=()=>{const m=S.moves.find(x=>x.id===b.dataset.tm2);if(m)openTime(m.acad,m.from,m)});
   box.querySelectorAll('[data-mv2]').forEach(b=>b.onclick=()=>{const m=S.moves.find(x=>x.id===b.dataset.mv2);if(m)openMove(m.acad,m.from,m)});
   box.querySelectorAll('[data-un]').forEach(b=>b.onclick=()=>{const m=S.moves.find(x=>x.id===b.dataset.un);S.moves=S.moves.filter(x=>x.id!==b.dataset.un);toast('↩️ 원래 날짜로 돌렸어요');render();if(m&&$('#ov').classList.contains('on'))openDay(d)});
   bindItems(box);
@@ -561,6 +565,20 @@ function openMove(acId,from,old){const a=acOf(acId);if(!a)return;
       selDay=to;const p=pd(to);ym=[p.getFullYear(),p.getMonth()];closeSheet();render();toast(`🔀 ${a.ico} ${a.name} ${fmt(to)}${tm?' '+tm:''}로 옮겼어요`)};
   };draw()}
 
+/* 그 날만 시간 바꾸기 = 같은 날로 옮기기 */
+function openTime(acId,d,old){const a=acOf(acId);if(!a)return;
+  openSheet(`<h2>⏰ 이 날만 시간 바꾸기<button class="x">✕</button></h2>
+    <div class="prev" style="background:color-mix(in srgb,${a.color} 15%,#fff)"><span class="ic">${a.ico}</span><b class="j" style="font-size:19px">${esc(a.name)} <span style="font-size:15px;color:var(--sub)">· ${fmt(d)} · 원래 ${a.time?esc(a.time):'시간 없음'}</span></b></div>
+    <div class="lbl">⏰ 이 날은 몇 시에 가요?</div><input class="inp" id="tmv" value="${esc(old?old.time:(a.time||''))}" placeholder="예) 6시~7시" maxlength="20">
+    <p class="note">${fmt(d)} 하루만 바뀌어요. 다른 날은 원래 시간 그대로예요.</p>
+    <button class="go" id="tok">저장</button>`);
+  const i=$('#tmv');setTimeout(()=>{i.focus();i.select()},50);
+  $('#tok').onclick=()=>{const tm=i.value.trim();
+    if(!tm||tm===a.time){toast(tm?'원래 시간과 같아요':'시간을 써 주세요');return}
+    S.moves=(S.moves||[]).filter(m=>!(old&&m.id===old.id)&&!(m.acad===acId&&m.from===d));
+    S.moves.push({id:old?old.id:uid(),acad:acId,from:d,to:d,time:tm});
+    closeSheet();render();openDay(d);toast(`⏰ ${a.ico} ${a.name} ${fmt(d)}만 ${tm}`)}}
+
 /* ---------- 카톡 공유 ---------- */
 let KO=null;
 const mapURL=q=>'https://map.kakao.com/link/search/'+q.trim().replace(/\s+/g,'%20');
@@ -574,7 +592,7 @@ function shareText(o){const A=visAbs(),t=today(),L=[];
     if(P.length)P.forEach(x=>{const a=acOf(x.acad);const tm=x.mkTime||a.time||'';L.push(`• ${a.ico} ${who(a)}${a.name} — ${fmt(x.mk)}${tm?' '+tm:''}${x.mk===t?' (오늘!)':dday(x.mk)==='내일'?' (내일)':''}`+plc(a))});
     else L.push('  잡힌 보강 없어요')}
   if(o.up){const MV=(S.moves||[]).filter(m=>m.to>=t&&visAcads().some(a=>a.id===m.acad)).sort((a,b)=>a.to.localeCompare(b.to));
-    if(MV.length){L.push('','🔀 바뀐 수업 날짜');MV.forEach(m=>{const a=acOf(m.acad),tm=m.time||a.time||'';L.push(`• ${a.ico} ${who(a)}${a.name} — ${fmt(m.from)} → ${fmt(m.to)}${tm?' '+tm:''}`+plc(a))})}}
+    if(MV.length){L.push('','🔀 바뀐 수업 날짜·시간');MV.forEach(m=>{const a=acOf(m.acad),tm=m.time||a.time||'';L.push(m.to===m.from?`• ${a.ico} ${who(a)}${a.name} — ${fmt(m.to)} 이 날만 ⏰ ${tm}${a.time?' (원래 '+a.time+')':''}`+plc(a):`• ${a.ico} ${who(a)}${a.name} — ${fmt(m.from)} → ${fmt(m.to)}${tm?' '+tm:''}`+plc(a))})}}
   if(o.wait){const W=A.filter(x=>status(x)==='wait').sort((a,b)=>a.date.localeCompare(b.date));
     if(W.length){L.push('','🔴 보강 날짜 아직 안 잡혔어요');W.forEach(x=>{const a=acOf(x.acad);L.push(`• ${a.ico} ${who(a)}${a.name} — ${fmt(x.date)} 결강${x.reason?' ('+x.reason+')':''}`)})}}
   if(o.tt){const C=visAcads();L.push('','🏫 학원 시간표');
@@ -598,7 +616,7 @@ async function copyTxt(t,msg){try{await navigator.clipboard.writeText(t);toast(m
 $('#kakao').onclick=openShare;
 
 /* ---------- 새 버전 자동 반영 ---------- */
-const APPVER='20261018e';
+const APPVER='20261019a';
 let verBusy=false;
 async function checkVer(auto){if(verBusy)return;verBusy=true;try{const r=await fetch(location.pathname+'?vc='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/const APPVER='([^']+)'/);
   if(m&&m[1]!==APPVER){if(auto&&($('#ov').classList.contains('on')||document.activeElement?.tagName==='INPUT'))return;await new Promise(r=>setTimeout(r,900));location.reload();return true}}catch(e){}finally{verBusy=false}return false}
