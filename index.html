@@ -189,6 +189,7 @@ h3 small{font-family:'Gaegu';font-size:15.6px;color:var(--sub);margin-left:4px}
 .pt-i .d{display:block;font-size:16.5px;color:#7a6a62}
 .pt-i .dd{font-family:'Gaegu';font-weight:700;color:#e0304d;text-align:center;font-size:17px;line-height:1.1;flex:none}
 .pt-i .dd.hot{background:#ff3d5a;color:#fff;border-radius:12px;padding:4px 7px}
+.pt-b{display:flex;flex-direction:column;gap:5px;flex:none}.pt-i .pt-b .sbtn.gr{background:#f2ece8;color:#8a7a72;box-shadow:none;font-size:14px;padding:6px 9px}
 .pt-i .sbtn{font-size:16px;line-height:1.15;padding:9px 11px;background:linear-gradient(135deg,#ffc94d,#f5a623);color:#fff;box-shadow:0 3px 8px #f5a62366}
 .pt-soon{margin-top:10px;font-size:17px;color:#8a6500}
 .soon{background:#fff8d6;border:2px dashed #f5c84a;border-radius:16px;padding:9px 12px;margin-bottom:12px;font-size:17px;color:#8a6500;display:flex;flex-wrap:wrap;gap:4px 10px}
@@ -337,7 +338,7 @@ function pendHTML(big){const A=visAbs(),t=today();
   if(!wait.length)return `<div class="postit ok"><div class="pt-h">🎉 밀린 보강이 하나도 없어요!</div><div class="pt-s">결강이 생기면 여기에 빨갛게 붙어요</div></div>`;
   return `<div class="postit"><div class="pt-h">🚨 보강 잡아야 해요! <span class="pt-n">${wait.length}</span></div><div class="pt-s">학원에 연락해서 보강 날짜를 잡아 주세요</div>`+
     wait.map(x=>{const a=acOf(x.acad),n=Math.round((pd(t)-pd(x.date))/864e5);
-      return `<div class="pt-i" data-ed="${x.id}" style="--c:${a.color}"><span class="ic">${a.ico}</span><span class="tx"><b>${esc(a.name)}</b>${kidTag(a)}<span class="d">❌ ${fmt(x.date)} 결강${x.reason?' · '+esc(x.reason):''}${x.memo?'<br>📝 '+esc(x.memo):''}</span></span><span class="dd ${n>=14?'hot':''}">${n>0?n+'일째<br>밀림':n===0?'오늘<br>결강':'예정<br>'+(-n)+'일 뒤'}</span><button class="sbtn y" data-mk="${x.id}">보강<br>잡기</button></div>`}).join('')+
+      return `<div class="pt-i" data-ed="${x.id}" style="--c:${a.color}"><span class="ic">${a.ico}</span><span class="tx"><b>${esc(a.name)}</b>${kidTag(a)}<span class="d">❌ ${fmt(x.date)} 결강${x.reason?' · '+esc(x.reason):''}${x.memo?'<br>📝 '+esc(x.memo):''}</span></span><span class="dd ${n>=14?'hot':''}">${n>0?n+'일째<br>밀림':n===0?'오늘<br>결강':'예정<br>'+(-n)+'일 뒤'}</span><span class="pt-b"><button class="sbtn y" data-mk="${x.id}">보강<br>잡기</button><button class="sbtn gr" data-nomk="${x.id}">🚫 보강<br>없대요</button></span></div>`}).join('')+
     (soon.length?`<div class="pt-soon">⭐ 곧 보강: `+soon.map(x=>{const a=acOf(x.acad);return `${a.ico} ${esc(a.name)} <b>${fmt(x.mk)}</b>${x.mkTime?' '+esc(x.mkTime):''}`}).join(' · ')+`</div>`:'')+`</div>`;
 }
 function renderCal(){
@@ -405,17 +406,18 @@ function kidTag(a){if(S.kids.length<2||kid!=='all')return'';const k=kidOf(a.kid)
 function itemHTML(x,k){const a=acOf(x.acad),st=status(x);
   let sub,btn='';
   if(k==='mk'){sub=`<span class="lk">❌ ${fmt(x.date)} 결강분</span>${x.mkTime?' · ⏰ '+esc(x.mkTime):''}`;}
-  else if(k==='ab'){sub=`${x.reason?esc(x.reason):''}${x.mk&&!x.none?` → <span class="lk">⭐ ${fmt(x.mk)} 보강</span>${x.mkTime?' '+esc(x.mkTime):''}`:''}${x.none?' → 보강 없음':!x.mk&&noMk(x)?' · 보강 없는 학원':''}`;
-    if(st==='wait')btn=`<button class="sbtn y" data-mk="${x.id}">보강 잡기</button>`;}
+  else if(k==='ab'){sub=`${x.reason?esc(x.reason):''}${x.mk&&!x.none?` → <span class="lk">⭐ ${fmt(x.mk)} 보강</span>${x.mkTime?' '+esc(x.mkTime):''}`:''}${x.none?' → 보강 없음'+(x.noWhy?'('+esc(x.noWhy)+')':''):!x.mk&&noMk(x)?' · 보강 없는 학원':''}`;
+    if(st==='wait')btn=`<span class="pt-b"><button class="sbtn y" data-mk="${x.id}">보강 잡기</button><button class="sbtn gr" data-nomk="${x.id}">🚫 없대요</button></span>`;}
   else{ // list
-    sub=`❌ ${fmt(x.date)} 결강${x.reason?' · '+esc(x.reason):''}${!x.mk&&!x.none&&noMk(x)?' · 🚫 보강 없는 학원':''}`+(x.mk&&!x.none?`<br><span class="lk">⭐ ${fmt(x.mk)} ${x.mkTime?esc(x.mkTime)+' ':''}보강 · ${dday(x.mk)}</span>`:'');
-    if(st==='wait')btn=`<button class="sbtn y" data-mk="${x.id}">보강 잡기</button>`;}
+    sub=`❌ ${fmt(x.date)} 결강${x.reason?' · '+esc(x.reason):''}${!x.mk&&!x.none&&noMk(x)?' · 🚫 보강 없는 학원':''}${x.none?' · 🚫 이번엔 보강 없음'+(x.noWhy?'('+esc(x.noWhy)+')':''):''}`+(x.mk&&!x.none?`<br><span class="lk">⭐ ${fmt(x.mk)} ${x.mkTime?esc(x.mkTime)+' ':''}보강 · ${dday(x.mk)}</span>`:'');
+    if(st==='wait')btn=`<span class="pt-b"><button class="sbtn y" data-mk="${x.id}">보강 잡기</button><button class="sbtn gr" data-nomk="${x.id}">🚫 없대요</button></span>`;}
   const tg=k==='mk'?['보강','t-mk']:k==='ab'?['결강','t-ab']:ST[st];
   const memo=x.memo?`<div>📝 ${esc(x.memo)}</div>`:'';
   return `<div class="item" style="--c:${a.color}" data-ed="${x.id}"><div class="ic">${a.ico}</div><div class="tx"><b>${esc(a.name)}</b><span class="tag ${tg[1]}">${tg[0]}</span>${k!=='list'&&k!=='mk'&&st==='wait'?'<span class="tag t-wait">대기</span>':''}${kidTag(a)}<div>${sub}</div>${memo}</div>${btn}</div>`;
 }
 function bindItems(box){
   box.querySelectorAll('[data-mk]').forEach(b=>b.onclick=e=>{e.stopPropagation();openAbs(b.dataset.mk,null,true)});
+  box.querySelectorAll('[data-nomk]').forEach(b=>b.onclick=e=>{e.stopPropagation();const x=S.abs.find(y=>y.id===b.dataset.nomk);if(!x)return;x.none=true;x.mk='';x.mkTime='';const a=acOf(x.acad);toast(`🚫 ${a?a.name:''} ${fmt(x.date)} 결강은 보강 없음으로 옮겼어요`);render();if($('#ov').classList.contains('on')&&selDay)openDay(selDay)});
   box.querySelectorAll('[data-ed]').forEach(b=>b.onclick=()=>openAbs(b.dataset.ed));
 }
 function renderList(){const A=visAbs(),t=today();
@@ -504,21 +506,26 @@ function openAc(id){
   };draw();
 }
 
+const NOWHY=['이월','환불','수업 취소','학원 사정','그냥 없대요'];
 function openAbs(id,pre,focusMk){
   if(!S.acads.length){toast('먼저 학원을 추가해 주세요');tab='ac';render();return}
   const old=id?S.abs.find(x=>x.id===id):null;
   const L=visAcads().length?visAcads():S.acads;
   const x=old?{...old}:{id:uid(),acad:(pre&&pre.acad)||(L.length===1?L[0].id:''),date:(pre&&pre.date)||today(),reason:'',mk:'',mkTime:'',none:false,memo:''};
-  let wantMk=!!(x.mk||x.none||focusMk);
+  let wantMk=!!(x.mk||focusMk)&&!x.none;
   const draw=()=>{const a=acOf(x.acad);
     let h=`<h2>${old?'✏️ 결강·보강 고치기':'❌ 결강 넣기'}<button class="x">✕</button></h2>
     <div class="lbl">어느 학원?</div><div class="chips">${L.map(a=>`<button class="chip ${x.acad===a.id?'on':''}" data-a="${a.id}"><span class="e">${a.ico}</span>${esc(a.name)}${S.kids.length>1&&kid==='all'&&kidOf(a.kid)?' '+kidOf(a.kid).em:''}</button>`).join('')}</div>
     <div class="lbl">❌ 결강 날짜</div><input type="date" class="inp" id="fd" value="${x.date}">
     <div class="lbl">왜 빠졌어요? (선택)</div><div class="chips">${REASONS.map(([e,t])=>`<button class="chip ${x.reason===t?'on':''}" data-r="${t}"><span class="e">${e}</span>${t}</button>`).join('')}</div>
-    ${a&&a.noMk&&!wantMk?'<p class="note">🚫 보강 없는 학원이라 결강만 기록돼요 (혹시 보강을 해 주면 아래를 켜요)</p>':''}
-    <label class="toggle"><input type="checkbox" id="wm" ${wantMk?'checked':''}> ⭐ 보강 날짜도 정해졌어요</label>`;
-    if(wantMk)h+=`<div class="mkbox"><div class="lbl">⭐ 보강 날짜</div><div class="row"><input type="date" class="inp" id="fm" value="${x.mk||''}" ${x.none?'disabled':''}><input class="inp" id="fmt" value="${esc(x.mkTime)}" placeholder="시간 예) 5시" ${x.none?'disabled':''}></div>
-      <label class="toggle" style="background:#f4f0ec;color:#8a7a72"><input type="checkbox" id="fno" ${x.none?'checked':''}> 보강 안 해요 (이월·환불·취소)</label></div>`;
+    ${a&&a.noMk&&!wantMk?'<p class="note">🚫 보강 없는 학원이라 결강만 기록돼요 (혹시 보강을 해 주면 「날짜 정해졌어요」를 눌러요)</p>':''}`;
+    const md=x.none?'none':wantMk?'mk':'wait';
+    h+=`<div class="lbl">⭐ 이번 결강, 보강은?</div><div class="chips">
+      <button class="chip ${md==='wait'?'on':''}" data-md="wait"><span class="e">⏳</span>${a&&a.noMk?'보강 없음 (학원 기본)':'아직 몰라요'}</button>
+      <button class="chip ${md==='mk'?'on':''}" data-md="mk"><span class="e">⭐</span>날짜 정해졌어요</button>
+      <button class="chip ${md==='none'?'on':''}" data-md="none"><span class="e">🚫</span>이번엔 보강 없어요</button></div>`;
+    if(md==='mk')h+=`<div class="mkbox"><div class="lbl">⭐ 보강 날짜</div><div class="row"><input type="date" class="inp" id="fm" value="${x.mk||''}"><input class="inp" id="fmt" value="${esc(x.mkTime)}" placeholder="시간 예) 5시"></div></div>`;
+    if(md==='none')h+=`<div class="mkbox" style="background:#f4f0ec"><div class="lbl">🚫 왜 보강이 없어요? (선택)</div><div class="chips">${NOWHY.map(t=>`<button class="chip ${x.noWhy===t?'on':''}" data-nw="${t}">${t}</button>`).join('')}</div><p class="note">「보강 잡아야 해요」 알림에서 빠지고 지난 기록으로 가요.</p></div>`;
     h+=`<div class="lbl">메모 (선택)</div><input class="inp" id="fme" value="${esc(x.memo)}" placeholder="예) 선생님이 문자 주신대요" maxlength="60">
     <button class="go" id="ok">${old?'저장':'넣기'}</button>${old?'<button class="del" id="dl">🗑️ 이 기록 지우기</button>':''}`;
     openSheet(h);
@@ -526,12 +533,14 @@ function openAbs(id,pre,focusMk){
     document.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{x.reason=x.reason===b.dataset.r?'':b.dataset.r;draw()});
     $('#fd').onchange=e=>x.date=e.target.value;
     $('#fme').oninput=e=>x.memo=e.target.value;
-    $('#wm').onchange=e=>{wantMk=e.target.checked;if(!wantMk){x.mk='';x.mkTime='';x.none=false}draw()};
-    if(wantMk){$('#fm').onchange=e=>x.mk=e.target.value;$('#fmt').oninput=e=>x.mkTime=e.target.value;$('#fno').onchange=e=>{x.none=e.target.checked;if(x.none){x.mk='';x.mkTime=''}draw()};
+    document.querySelectorAll('[data-md]').forEach(b=>b.onclick=()=>{const v=b.dataset.md;wantMk=v==='mk';x.none=v==='none';if(v!=='mk'){x.mk='';x.mkTime=''}if(v!=='none')delete x.noWhy;draw()});
+    document.querySelectorAll('[data-nw]').forEach(b=>b.onclick=()=>{x.noWhy=x.noWhy===b.dataset.nw?'':b.dataset.nw;draw()});
+    if(wantMk&&!x.none){$('#fm').onchange=e=>x.mk=e.target.value;$('#fmt').oninput=e=>x.mkTime=e.target.value;
       if(focusMk&&!x.mk){focusMk=false;setTimeout(()=>{const f=$('#fm');f&&f.scrollIntoView({block:'center'})},50)}}
     $('#ok').onclick=()=>{if(!x.acad){toast('학원을 골라 주세요');return}if(!x.date){toast('결강 날짜를 넣어 주세요');return}
       if(x.mk&&x.mk<x.date&&!confirmLate){confirmLate=true;toast('보강이 결강보다 빨라요. 맞으면 한 번 더 눌러요');return}
-      confirmLate=false;
+      if(wantMk&&!x.none&&!x.mk){toast('보강 날짜를 넣거나 「아직 몰라요」를 눌러 주세요');return}
+      confirmLate=false;if(!x.noWhy)delete x.noWhy;
       const i=S.abs.findIndex(y=>y.id===x.id);if(i>=0)S.abs[i]=x;else S.abs.push(x);
       const a=acOf(x.acad);closeSheet();
       toast(x.mk?`${a.ico} 보강 ${fmt(x.mk)} 저장! ⭐`:x.none?`${a.ico} 저장했어요`:`${a.ico} ${fmt(x.date)} 결강 저장 · 보강 대기 🔴`);
@@ -703,7 +712,7 @@ async function copyTxt(t,msg){try{await navigator.clipboard.writeText(t);toast(m
 $('#kakao').onclick=openShare;
 
 /* ---------- 새 버전 자동 반영 ---------- */
-const APPVER='20261024a';
+const APPVER='20261024b';
 let verBusy=false;
 async function checkVer(auto){if(verBusy)return;verBusy=true;try{const r=await fetch(location.pathname+'?vc='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/const APPVER='([^']+)'/);
   if(m&&m[1]!==APPVER){if(auto&&($('#ov').classList.contains('on')||document.activeElement?.tagName==='INPUT'))return;await new Promise(r=>setTimeout(r,900));location.reload();return true}}catch(e){}finally{verBusy=false}return false}
