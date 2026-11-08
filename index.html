@@ -275,8 +275,8 @@ h3 small{font-family:'Gaegu';font-size:15.6px;color:var(--sub);margin-left:4px}
 <script>
 window.addEventListener('error',e=>{try{const b=document.createElement('div');b.style.cssText='position:fixed;left:8px;right:8px;bottom:8px;z-index:999;background:#fff0f0;border:2px solid #f66;border-radius:12px;padding:8px;font:14px sans-serif;color:#c00';b.textContent='⚠️ 오류: '+e.message+' ('+(e.lineno||'')+') — 이 화면을 캡처해서 보내주세요';b.onclick=()=>b.remove();document.body.appendChild(b)}catch(_){}});
 const KEY='academy_makeup_v1';
-const ICONS=['🎹','🎻','🎸','🥁','🎤','🎺','🎵','🏊','🥋','⚽','🏀','⚾','🎾','🏸','🏑','🤸','🩰','⛸️','🚴','🧗','🏓','🤺','🎨','✏️','🧶','🏺','📐','➗','🔢','🍎','🇺🇸','🇬🇧','🗽','🦉','💬','🔤','🌍','📖','✍️','📚','🧪','🔬','🔭','💻','🤖','🧩','♟️','🧠','🗣️','🇨🇳','🇯🇵','🎭','📸','🍳','🌱','🦄','🏫','⭐'];
-const KW=[[/피아노|건반/,'🎹'],[/바이올린|첼로|현악|오케/,'🎻'],[/기타|우쿨/,'🎸'],[/드럼|난타/,'🥁'],[/보컬|노래|성악|합창/,'🎤'],[/플룻|트럼펫|관악|색소폰|클라리넷/,'🎺'],[/음악|리코더|오카리나/,'🎵'],[/수영/,'🏊'],[/태권|합기|유도|검도|주짓수|복싱/,'🥋'],[/축구|풋살/,'⚽'],[/농구/,'🏀'],[/야구/,'⚾'],[/테니스/,'🎾'],[/배드민턴/,'🏸'],[/하키/,'🏑'],[/체조|줄넘기|체육|짐/,'🤸'],[/발레|무용|댄스|방송/,'🩰'],[/스케이트|빙상|피겨/,'⛸️'],[/자전거|사이클/,'🚴'],[/클라이밍/,'🧗'],[/탁구/,'🏓'],[/펜싱/,'🤺'],[/미술|그림|드로잉/,'🎨'],[/서예|한자|글씨/,'✍️'],[/공예|도예|만들기/,'🏺'],[/수학|연산|사고력|셈/,'📐'],[/영어|파닉스/,'🍎'],[/중국/,'🇨🇳'],[/일본/,'🇯🇵'],[/국어|논술|독서|책/,'📖'],[/과학|실험/,'🧪'],[/코딩|컴퓨터|소프트/,'💻'],[/로봇/,'🤖'],[/바둑|체스|보드/,'♟️'],[/스피치|발표/,'🗣️'],[/연기|뮤지컬|연극/,'🎭'],[/요리|쿠킹/,'🍳'],[/학습지|구몬|눈높이|씽크|공부방/,'✏️'],[/웅변/,'🗣️'],[/방과후|늘봄|돌봄/,'🏫']];
+const ICONS=['🎹','🎻','🎸','🥁','🎤','🎺','🎵','🏊','🥋','⚽','🏀','⚾','🎾','🏸','🏑','🤸','🩰','⛸️','🚴','🧗','🏓','🤺','🎨','✏️','🧶','🏺','📐','➗','🔢','🍎','🇺🇸','🇬🇧','🗽','🦉','💬','🔤','🌍','📖','✍️','📚','🧪','🔬','🔭','💻','🤖','🧩','♟️','🧠','🗣️','🇨🇳','🇯🇵','🎭','📸','🍳','🌱','🦄','🏫','🧸','🌼','⭐'];
+const KW=[[/피아노|건반/,'🎹'],[/바이올린|첼로|현악|오케/,'🎻'],[/기타|우쿨/,'🎸'],[/드럼|난타/,'🥁'],[/보컬|노래|성악|합창/,'🎤'],[/플룻|트럼펫|관악|색소폰|클라리넷/,'🎺'],[/음악|리코더|오카리나/,'🎵'],[/수영/,'🏊'],[/태권|합기|유도|검도|주짓수|복싱/,'🥋'],[/축구|풋살/,'⚽'],[/농구/,'🏀'],[/야구/,'⚾'],[/테니스/,'🎾'],[/배드민턴/,'🏸'],[/하키/,'🏑'],[/체조|줄넘기|체육|짐/,'🤸'],[/발레|무용|댄스|방송/,'🩰'],[/스케이트|빙상|피겨/,'⛸️'],[/자전거|사이클/,'🚴'],[/클라이밍/,'🧗'],[/탁구/,'🏓'],[/펜싱/,'🤺'],[/미술|그림|드로잉/,'🎨'],[/서예|한자|글씨/,'✍️'],[/공예|도예|만들기/,'🏺'],[/수학|연산|사고력|셈/,'📐'],[/영어|파닉스/,'🍎'],[/중국/,'🇨🇳'],[/일본/,'🇯🇵'],[/국어|논술|독서|책/,'📖'],[/과학|실험/,'🧪'],[/코딩|컴퓨터|소프트/,'💻'],[/로봇/,'🤖'],[/바둑|체스|보드/,'♟️'],[/스피치|발표/,'🗣️'],[/연기|뮤지컬|연극/,'🎭'],[/요리|쿠킹/,'🍳'],[/학습지|구몬|눈높이|씽크|공부방/,'✏️'],[/웅변/,'🗣️'],[/방과후/,'🏫'],[/돌봄/,'🧸'],[/늘봄/,'🌼']];
 const COLORS=['#ff8fab','#ff9e5e','#ffc94d','#7fd67a','#4fc3b5','#6aa9ff','#9b8cff','#e58fff','#b08968','#8a9bb0'];
 const KIDEM=['🐰','🐻','🐱','🐶','🐥','🦊','🐼','🐯','🐨','🐹'];
 const REASONS=[['🤒','아파서'],['✈️','여행·가족 일'],['🏫','학교 행사'],['🏢','학원 사정'],['🎉','공휴일'],['😴','그냥 빠짐'],['✏️','기타']];
@@ -633,7 +633,7 @@ function openAc(id){
   const draw=()=>{
     let h=`<h2>${id?'✏️ 학원 고치기':'➕ 학원 추가'}<button class="x">✕</button></h2>
     <div class="prev" style="background:color-mix(in srgb,${a.color} 15%,#fff)"><span class="ic">${a.ico}</span><b class="j" style="font-size:19px">${esc(a.name)||'학원 이름'}</b></div>
-    <div class="lbl">학원 이름</div><input class="inp" id="fn" value="${esc(a.name)}" placeholder="예) 피아노, 수영, 방과후 로봇" maxlength="20">`;
+    <div class="lbl">학원 이름</div><input class="inp" id="fn" value="${esc(a.name)}" placeholder="예) 피아노, 수영, 방과후 로봇" maxlength="20">${id?'':`<div class="chips" style="margin-top:6px"><span class="note">학교 안 수업:</span>${['🏫 방과후','🧸 돌봄교실','🌼 늘봄'].map(t=>`<button class="chip" data-qn="${t}">${t}</button>`).join('')}</div>`}`;
     if(S.kids.length>1)h+=`<div class="lbl">누가 다녀요?</div><div class="chips">${S.kids.map(k=>`<button class="chip ${a.kid===k.id?'on':''}" data-kid="${k.id}"><span class="e">${k.em}</span>${esc(k.name)}</button>`).join('')}</div>`;
     h+=`<div class="lbl">아이콘 <span class="note">(이름을 쓰면 저절로 골라져요)</span></div><div class="icons">${ICONS.map(e=>`<button class="${a.ico===e?'on':''}" data-ic="${e}">${e}</button>`).join('')}</div>
     <div class="lbl">색깔</div><div class="colors">${COLORS.map(c=>`<button class="${a.color===c?'on':''}" data-co="${c}" style="background:${c}"></button>`).join('')}</div>
@@ -652,6 +652,7 @@ function openAc(id){
     <button class="go" id="ok">${id?'저장':'추가하기'}</button>${id?'<button class="del" id="dl">🗑️ 이 학원 지우기</button>':''}`;
     openSheet(h);
     const fn=$('#fn');
+    document.querySelectorAll('[data-qn]').forEach(q=>q.onclick=()=>{const [e,n]=q.dataset.qn.split(' ');a.name=n;a.ico=e;delete a.auto;a.trv=0;if(n!=='방과후')a.noMk=true;draw();const f=$('#fn');f.focus();f.setSelectionRange(n.length,n.length)});
     fn.oninput=()=>{a.name=fn.value;if(a.auto){const s=suggest(a.name);if(s&&s!==a.ico){a.ico=s;const p=fn.selectionStart;draw();$('#fn').focus();$('#fn').setSelectionRange(p,p);return}}document.querySelector('.prev b').textContent=a.name||'학원 이름'};
     if($('#ft'))$('#ft').oninput=e=>a.time=e.target.value;
     $('#fs').onchange=e=>{const had=!!a.start;a.start=e.target.value||'';if(had!==!!a.start)draw()};
@@ -890,7 +891,7 @@ async function copyTxt(t,msg){try{await navigator.clipboard.writeText(t);toast(m
 $('#kakao').onclick=openShare;
 
 /* ---------- 새 버전 자동 반영 ---------- */
-const APPVER='20261108f';
+const APPVER='20261108g';
 let verBusy=false;
 async function checkVer(auto){if(verBusy)return;verBusy=true;try{const r=await fetch(location.pathname+'?vc='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/const APPVER='([^']+)'/);
   if(m&&m[1]!==APPVER){if(auto&&($('#ov').classList.contains('on')||document.activeElement?.tagName==='INPUT'))return;await new Promise(r=>setTimeout(r,900));location.reload();return true}}catch(e){}finally{verBusy=false}return false}
