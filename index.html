@@ -230,6 +230,7 @@ h3 small{font-family:'Gaegu';font-size:15.6px;color:var(--sub);margin-left:4px}
 .ttrv.tight{border-color:#ff9e5e;color:#e0702a}
 .ttrv.car{border-color:#8fb7ff;color:#4a78c8;font-weight:700}
 .ttrv.bus{left:6%;right:6%;border:0;border-radius:6px;background:repeating-linear-gradient(135deg,#fff3c4 0 6px,#ffeaa0 6px 12px);color:#8a6a00;font-weight:700;font-size:11px}
+.ttrv.bus.mom{background:repeating-linear-gradient(135deg,#dfeaff 0 6px,#cddfff 6px 12px);color:#3b64b0}
 .ttrv.bus.tight,.ttrv.bus.over{background:repeating-linear-gradient(135deg,#ffe0cc 0 6px,#ffc9a8 6px 12px);color:#c0501a}
 .tblk{position:absolute;z-index:2;left:1px;right:1px;border-radius:9px;background:color-mix(in srgb,var(--c) 30%,#fff);border:2px solid color-mix(in srgb,var(--c) 75%,#fff);padding:2px 3px;text-align:left;overflow:hidden;display:flex;flex-direction:column;line-height:1.08;box-shadow:0 2px 5px #0000000f}
 .tblk b{font-family:'Gamja Flower';font-weight:normal;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -498,7 +499,7 @@ const m2hm=n=>pad(Math.floor(n/60))+':'+pad(n%60);
 const hk=n=>{const h=Math.floor(n/60),m=n%60;return (h>12?h-12:h)+':'+pad(m)};
 function txtTime(t){const re=/(\d{1,2})\s*(?::\s*(\d\d)|시\s*(반|(\d{1,2})\s*분)?)/g,o=[];let m;while((m=re.exec(t||''))&&o.length<2){let h=+m[1];const mi=m[2]?+m[2]:m[3]==='반'?30:m[4]?+m[4]:0;if(h<9)h+=12;o.push(h*60+mi)}return o}
 function baseSc(a){const t=txtTime(a.sl?'':a.time),sl={};(a.days||[]).forEach(w=>{const v=a.sl?a.sl[w]:(t[0]!=null?m2hm(t[0]):'');if(v)sl[w]=v});
-  return {days:[...(a.days||[])],sl,dur:a.dur||(t[1]>t[0]?t[1]-t[0]:50),trv:a.trv??10,bus:a.bus||0,car:!!a.car,fix:!!a.fix}}
+  return {days:[...(a.days||[])],sl,dur:a.dur||(t[1]>t[0]?t[1]-t[0]:50),trv:a.trv??10,bus:a.bus||(a.car?a.trv||15:0),car:!!a.car,fix:!!a.fix}}
 const G=o=>o.bus||o.trv; /* 🚌 차량이면 탑승 시간까지, 아니면 이동 시간만큼 비워야 해요 */
 let ttPlan=S.ttPlan||'';
 const curPlan=()=>ttPlan&&(S.plans||[]).find(p=>p.id===ttPlan)||null;
@@ -507,7 +508,7 @@ function scTxt(o){const ws=o.days.filter(w=>o.sl[w]).sort((x,y)=>(x||7)-(y||7));
   if(st.length===1&&ws.length===o.days.length){const s=hm2m(st[0]);return hk(s)+'~'+hk(s+o.dur)}
   return ws.map(w=>DOW[w]+' '+hk(hm2m(o.sl[w]))).join(' · ')+' ('+o.dur+'분)'}
 function setSc(a,o){const p=curPlan();if(p){p.s=p.s||{};p.s[a.id]=o;return}
-  a.days=[...o.days].sort();a.sl={};a.days.forEach(w=>{if(o.sl[w])a.sl[w]=o.sl[w]});a.dur=o.dur;a.trv=o.trv;if(o.bus)a.bus=o.bus;else delete a.bus;if(o.car&&!o.bus)a.car=true;else delete a.car;if(o.fix)a.fix=true;else delete a.fix;a.time=scTxt(o)}
+  a.days=[...o.days].sort();a.sl={};a.days.forEach(w=>{if(o.sl[w])a.sl[w]=o.sl[w]});a.dur=o.dur;a.trv=o.trv;if(o.bus)a.bus=o.bus;else delete a.bus;if(o.car)a.car=true;else delete a.car;if(o.fix)a.fix=true;else delete a.fix;a.time=scTxt(o)}
 const timeOf=(a,w)=>{const o=baseSc(a),s=hm2m(o.sl[w]);return s==null?(a.time||''):hk(s)+'~'+hk(s+o.dur)};
 function lanes(){const ks=kid==='all'?S.kids:S.kids.filter(k=>k.id===kid);const L=ks.map(k=>({id:k.id,name:k.name,em:k.em}));
   if(!L.length||visAcads().some(a=>!kidOf(a.kid)))L.push({id:'_',name:L.length?'기타':'',em:''});return L}
@@ -543,9 +544,9 @@ function renderTT(){const p=curPlan(),L=lanes(),PL=S.plans||[];
     L.forEach(l=>{h+=`<div class="ttl" data-ln="${l.id}" data-w="${w}">`;const sch=schOf(l.id,w);
       if(sch!=null&&sch>lo)h+=`<div class="tsch" data-sch="1" style="top:0;height:${(sch-lo)*PX}px"><span>🏫 ~${hk(sch)}</span></div>`;
       marks(l.id,w).forEach(b=>{const top=(b.s-lo)*PX,ht=b.o.dur*PX;
-        if(b.o.bus)h+=`<div class="ttrv bus ${b.warn}" style="top:${top-b.o.bus*PX}px;height:${b.o.bus*PX}px">🚌 ${hk(b.s-b.o.bus)}</div>`;
+        if(b.o.bus)h+=`<div class="ttrv bus ${b.o.car?'mom':''} ${b.warn}" style="top:${top-b.o.bus*PX}px;height:${b.o.bus*PX}px">${b.o.car?'🚗':'🚌'} ${hk(b.s-b.o.bus)}</div>`;
         else if(b.o.trv&&(b.prevN||b.o.car))h+=`<div class="ttrv ${b.o.car?'car':''} ${b.warn}" style="top:${top-b.o.trv*PX}px;height:${b.o.trv*PX}px">${b.o.car?'🚗':'🚶'}${b.o.trv}</div>`;
-        h+=`<button class="tblk ${b.warn} ${b.o.fix?'fx':''}" data-b="${b.a.id}" data-w="${w}" style="top:${top}px;height:${ht}px;--c:${b.a.color}">${b.o.fix?'<i class="pin">📌</i>':''}<b>${b.a.ico} ${esc(b.a.name)}</b><span>${hk(b.s)}~${hk(b.e)}</span>${b.warn?`<em>${b.warn==='over'?'⚠️ 겹쳐요':b.o.bus?'⚠️ 차량 '+hk(b.s-b.o.bus)+' 못 타요':'⚠️ 이동 '+b.o.trv+'분 부족'}</em>`:''}</button>`});
+        h+=`<button class="tblk ${b.warn} ${b.o.fix?'fx':''}" data-b="${b.a.id}" data-w="${w}" style="top:${top}px;height:${ht}px;--c:${b.a.color}">${b.o.fix?'<i class="pin">📌</i>':''}<b>${b.a.ico} ${esc(b.a.name)}</b><span>${hk(b.s)}~${hk(b.e)}</span>${b.warn?`<em>${b.warn==='over'?'⚠️ 겹쳐요':b.o.bus?'⚠️ '+(b.o.car?'엄마 차 ':'차량 ')+hk(b.s-b.o.bus)+' 못 타요':'⚠️ 이동 '+b.o.trv+'분 부족'}</em>`:''}</button>`});
       h+=`</div>`});h+=`</div>`});
   h+=`</div></div>${!one?'<div class="note" style="text-align:center">👉 옆으로 밀면 다른 요일도 보여요 · 위에서 아이를 고르면 <b>한 화면에 다 보여요</b></div>':''}`;
   const nt=[];ws.concat([0,6].filter(w=>!ws.includes(w))).forEach(w=>L.forEach(l=>dayBlocks(l.id,w).filter(b=>b.s==null).forEach(b=>nt.push(`<button class="chip" data-b="${b.a.id}" data-w="${w}"><span class="e">${b.a.ico}</span>${esc(b.a.name)} ${DOW[w]}</button>`))));
@@ -572,7 +573,7 @@ function newPlan(copy){S.plans=S.plans||[];const src=copy?curPlan():null;const s
   let k=S.plans.length+1;while(S.plans.some(x=>x.name==='안 '+k))k++;
   const p={id:uid(),name:'안 '+k,s};S.plans.push(p);ttPlan=p.id;render();toast(`🧪 「${p.name}」 연습 시작! 마음껏 바꿔 보세요`)}
 function planDiff(p){const out=[];S.acads.filter(a=>p.s[a.id]).forEach(a=>{const A=baseSc(a),B=p.s[a.id],t=o=>[...o.days].sort((x,y)=>(x||7)-(y||7)).map(w=>DOW[w]+(o.sl[w]?' '+hk(hm2m(o.sl[w])):'')).join(', ')||'안 가요';
-  const ch=[];if(t(A)!==t(B))ch.push(`${t(A)} → <b>${t(B)}</b>`);if(A.dur!==B.dur)ch.push(`${A.dur}분 → <b>${B.dur}분</b>`);if(A.fix!==B.fix)ch.push(B.fix?'📌 고정':'고정 풂');if((A.bus||0)!==(B.bus||0)||!!A.car!==!!B.car)ch.push(B.bus?`🚌 학원 차량 수업 ${B.bus}분 전`:B.car?'🚗 엄마 차량':'🚶 걸어서');
+  const ch=[];if(t(A)!==t(B))ch.push(`${t(A)} → <b>${t(B)}</b>`);if(A.dur!==B.dur)ch.push(`${A.dur}분 → <b>${B.dur}분</b>`);if(A.fix!==B.fix)ch.push(B.fix?'📌 고정':'고정 풂');if((A.bus||0)!==(B.bus||0)||!!A.car!==!!B.car)ch.push(B.car?`🚗 엄마 차 픽업 ${B.bus}분 전`:B.bus?`🚌 학원 차량 수업 ${B.bus}분 전`:'🚶 걸어서');
   if(ch.length)out.push(`${a.ico} ${esc(a.name)}: ${ch.join(' · ')}`)});return out}
 function openSlot(id,w){const a=acOf(id);if(!a)return;const p=curPlan(),o=JSON.parse(JSON.stringify(sc(a)));
   const lid=laneOf(a);let st=hm2m(o.sl[w]);if(st==null){const B=marks(lid,w);st=B.length?B[B.length-1].e+G(o):(schOf(lid,w)??14*60)+G(o)}
@@ -584,9 +585,9 @@ function openSlot(id,w){const a=acOf(id);if(!a)return;const p=curPlan(),o=JSON.p
     <div class="trow"><button class="sbtn gr" data-st="-10">−10분</button><input type="time" class="inp" id="sst" value="${m2hm(st)}" step="300"><button class="sbtn gr" data-st="10">+10분</button></div>
     <div class="tend">끝나는 시간 <b>${hk(e)}</b> <span class="note">(${hk(st)} + ${o.dur}분)</span></div>
     <div class="lbl">⏱️ 수업 길이 <span class="note">(모든 요일 같이)</span></div><div class="chips">${[30,40,50,60,80,90,120].map(n=>`<button class="chip ${o.dur===n?'on':''}" data-du="${n}">${n}분</button>`).join('')}<input class="inp" id="sdu" inputmode="numeric" style="width:84px" value="${o.dur}" maxlength="3"></div>
-    <div class="lbl">🚌 어떻게 가요?</div><div class="chips"><button class="chip ${!o.bus&&!o.car?'on':''}" data-bs="0">🚶 걸어서</button><button class="chip ${o.car&&!o.bus?'on':''}" data-bs="2">🚗 엄마 차량</button><button class="chip ${o.bus?'on':''}" data-bs="1">🚌 학원 차량</button></div>
-    ${o.bus?`<div class="lbl">🚌 차량 타는 시간</div><div class="trow"><button class="sbtn gr" data-bt="5">−5분</button><input type="time" class="inp" id="sbt" value="${m2hm(st-o.bus)}" step="300"><button class="sbtn gr" data-bt="-5">+5분</button></div>
-    <div class="tend">🚌 <b>${hk(st-o.bus)}</b> 탑승 → 수업 <b>${hk(st)}</b> <span class="note">(차 타고 ${o.bus}분 · 앞 일정은 ${hk(st-o.bus)}까지 끝나야 해요)</span></div>`
+    <div class="lbl">🚌 어떻게 가요?</div><div class="chips"><button class="chip ${!o.bus&&!o.car?'on':''}" data-bs="0">🚶 걸어서</button><button class="chip ${o.car?'on':''}" data-bs="2">🚗 엄마 차량</button><button class="chip ${o.bus&&!o.car?'on':''}" data-bs="1">🚌 학원 차량</button></div>
+    ${o.bus?`<div class="lbl">${o.car?'🚗 엄마 차 픽업 시간':'🚌 차량 타는 시간'}</div><div class="trow"><button class="sbtn gr" data-bt="5">−5분</button><input type="time" class="inp" id="sbt" value="${m2hm(st-o.bus)}" step="300"><button class="sbtn gr" data-bt="-5">+5분</button></div>
+    <div class="tend">${o.car?'🚗':'🚌'} <b>${hk(st-o.bus)}</b> ${o.car?'픽업':'탑승'} → 수업 <b>${hk(st)}</b> <span class="note">(차 타고 ${o.bus}분 · 앞 일정은 ${hk(st-o.bus)}까지 끝나야 해요)</span></div>`
     :`<div class="lbl">${o.car?'🚗 엄마 차로':'🚶'} 앞 일정(학교·다른 학원)에서 오는 데</div><div class="chips">${[0,5,10,15,20,30].map(n=>`<button class="chip ${o.trv===n?'on':''}" data-tv="${n}">${n?n+'분':'바로'}</button>`).join('')}</div>`}
     <div class="lbl">📌 시간이 정해진 학원인가요?</div><div class="chips"><button class="chip ${o.fix?'on':''}" data-fx="1">📌 고정 (안 움직여요)</button><button class="chip ${!o.fix?'on':''}" data-fx="0">🔀 움직여도 돼요</button></div>
     <div class="lbl">📅 요일 옮기기</div><div class="days">${[1,2,3,4,5,6,0].map(i=>`<button class="${nw===i?'on':''}" data-nw="${i}" ${i!==w&&o.days.includes(i)?'disabled style="opacity:.3"':''}>${DOW[i]}</button>`).join('')}</div>
@@ -597,7 +598,7 @@ function openSlot(id,w){const a=acOf(id);if(!a)return;const p=curPlan(),o=JSON.p
     document.querySelectorAll('[data-du]').forEach(b=>b.onclick=()=>{o.dur=+b.dataset.du;draw()});
     $('#sdu').onchange=ev=>{const v=parseInt(ev.target.value);if(v>=5&&v<=300){o.dur=v}draw()};
     document.querySelectorAll('[data-tv]').forEach(b=>b.onclick=()=>{o.trv=+b.dataset.tv;draw()});
-    document.querySelectorAll('[data-bs]').forEach(b=>b.onclick=()=>{const v=b.dataset.bs;o.bus=v==='1'?(o.bus||30):0;o.car=v==='2';draw()});
+    document.querySelectorAll('[data-bs]').forEach(b=>b.onclick=()=>{const v=b.dataset.bs;o.bus=v==='0'?0:(o.bus||(v==='2'?20:30));o.car=v==='2';draw()});
     document.querySelectorAll('[data-bt]').forEach(b=>b.onclick=()=>{o.bus=Math.max(5,Math.min(180,o.bus+ +b.dataset.bt));draw()});
     if($('#sbt'))$('#sbt').onchange=ev=>{const v=hm2m(ev.target.value);if(v!=null&&v<st&&st-v<=180){o.bus=st-v}else toast('수업 시작보다 앞 시간으로 넣어 주세요');draw()};
     document.querySelectorAll('[data-fx]').forEach(b=>b.onclick=()=>{o.fix=b.dataset.fx==='1';draw()});
@@ -889,7 +890,7 @@ async function copyTxt(t,msg){try{await navigator.clipboard.writeText(t);toast(m
 $('#kakao').onclick=openShare;
 
 /* ---------- 새 버전 자동 반영 ---------- */
-const APPVER='20261108e';
+const APPVER='20261108f';
 let verBusy=false;
 async function checkVer(auto){if(verBusy)return;verBusy=true;try{const r=await fetch(location.pathname+'?vc='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/const APPVER='([^']+)'/);
   if(m&&m[1]!==APPVER){if(auto&&($('#ov').classList.contains('on')||document.activeElement?.tagName==='INPUT'))return;await new Promise(r=>setTimeout(r,900));location.reload();return true}}catch(e){}finally{verBusy=false}return false}
