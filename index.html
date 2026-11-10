@@ -161,6 +161,10 @@ h3 small{font-family:'Gaegu';font-size:15.6px;color:var(--sub);margin-left:4px}
 .toggle{display:flex;align-items:center;gap:8px;margin-top:12px;padding:10px 12px;border-radius:14px;background:#fff8e6;font-family:'Gamja Flower';color:#a87500;font-size:1.15em}
 .toggle input{width:20px;height:20px;accent-color:#f5a623}
 .mkbox{background:#fffbea;border-radius:16px;padding:4px 12px 12px;margin-top:8px}
+.srow{background:#fffbea;border-radius:14px;padding:8px 10px;margin-top:6px}.srow .inp{min-width:0}
+.gsum{margin-top:10px;border-radius:14px;padding:10px 12px;line-height:1.6;background:#eaf7ec}.gsum.warn{background:#fff0ec;color:#c0392b}.gsum.over{background:#eef4ff}
+.gses span{display:inline-block;margin:3px 8px 0 0}.gses .dn{color:#2f9a55}
+.gbar{height:8px;background:#eee;border-radius:9px;overflow:hidden;margin-top:6px}.gbar i{display:block;height:100%;background:#f5a623}
 .pick{max-height:260px;overflow:auto}
 .pick .item{cursor:pointer;border:2px solid transparent}
 .pick .item.on{border-color:#f5a623;background:#fff6dc}
@@ -287,7 +291,7 @@ function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.acads)
 function save(){S.tab=tab;S.kid=kid;S.ttPlan=ttPlan;const d=dataStr();if(d!==S.lastD){S.lastD=d;S.at=Date.now();queuePush()}try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 /* ---------- 온라인 저장 (Firebase RTDB, 가족 코드) ---------- */
 const DB='https://matchmaker-28187-default-rtdb.asia-southeast1.firebasedatabase.app/academy_makeup/';
-const dataStr=()=>JSON.stringify({kids:S.kids,acads:S.acads,abs:S.abs,moves:S.moves||[],sch:S.sch||{},plans:S.plans||[]});
+const dataStr=()=>JSON.stringify({kids:S.kids,acads:S.acads,abs:S.abs,moves:S.moves||[],sch:S.sch||{},plans:S.plans||[],mkg:S.mkg||[]});
 const newCode=()=>{const c='abcdefghjkmnpqrstuvwxyz23456789';let r='';const a=crypto.getRandomValues(new Uint8Array(12));a.forEach(v=>r+=c[v%c.length]);return r};
 const shareURL=()=>location.origin+location.pathname+'#f='+S.code;
 let pushT=null,syncState='',pulling=false,initAt=0;
@@ -297,7 +301,7 @@ async function push(){try{const r=await fetch(DB+S.code+'.json',{method:'PUT',bo
 async function pull(force){if(!S.code||pulling)return;pulling=true;
   try{const r=await fetch(DB+S.code+'.json?x='+Date.now());if(!r.ok)throw 0;const j=await r.json();
     if(force===true&&(S.at||0)>initAt)force=false;
-    if(j&&j.d&&(force||j.at>(S.at||0))){const d=JSON.parse(j.d);S.kids=d.kids||[];S.acads=d.acads||[];S.abs=d.abs||[];S.moves=d.moves||[];S.sch=d.sch||{};S.plans=d.plans||[];if(ttPlan&&!S.plans.some(x=>x.id===ttPlan))ttPlan='';S.lastD=j.d;S.at=j.at;
+    if(j&&j.d&&(force||j.at>(S.at||0))){const d=JSON.parse(j.d);S.kids=d.kids||[];S.acads=d.acads||[];S.abs=d.abs||[];S.moves=d.moves||[];S.sch=d.sch||{};S.plans=d.plans||[];S.mkg=d.mkg||[];if(ttPlan&&!S.plans.some(x=>x.id===ttPlan))ttPlan='';S.lastD=j.d;S.at=j.at;
       if(kid!=='all'&&!kidOf(kid))kid='all';try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(!$('#ov').classList.contains('on'))render();setCloud('ok');return 'got'}
     else if(!j||!j.d||j.at<(S.at||0)){await push();return 'pushed'}
     setCloud('ok')}catch(e){setCloud('off')}finally{pulling=false}}
@@ -324,6 +328,7 @@ const uid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let S=load();
 if(!S.moves)S.moves=[];
+if(!S.mkg)S.mkg=[];
 const addDays=(k,n)=>{const p=pd(k);p.setDate(p.getDate()+n);return ds(p)};
 let tab=S.tab||'cal', kid=S.kid||'all', ym=null, selDay=null;
 const pad=n=>String(n).padStart(2,'0');
@@ -345,11 +350,24 @@ function visAcads(){return S.acads.filter(a=>kid==='all'||a.kid===kid)}
 function visAbs(){const ids=new Set(visAcads().map(a=>a.id));return S.abs.filter(x=>ids.has(x.acad))}
 const noMk=x=>{const a=acOf(x.acad);return !!(a&&a.noMk)};
 function status(x){if(x.none||(noMk(x)&&!x.mk))return'none';if(!x.mk)return'wait';return x.mk<=today()?'done':'plan'}
+/* 📦 나눠서 보강: S.mkg=[{id,acad,abs:[결강 id],per:결강 1번 분,ses:[{d,t,m}]}] · 묶인 결강은 x.g, x.mk=마지막 보강 날(상태 계산용) */
+const grpOf=x=>x&&x.g?(S.mkg||[]).find(g=>g.id===x.g)||null:null;
+const hm=m=>{m=+m||0;const h=Math.floor(m/60),r=m%60;return (h?h+'시간':'')+(r?(h?' ':'')+r+'분':'')||'0분'};
+const gNeed=g=>g.abs.length*(g.per||60), gGot=g=>g.ses.reduce((t,x)=>t+(+x.m||0),0), gDone=g=>g.ses.filter(x=>x.d&&x.d<=today()).reduce((t,x)=>t+(+x.m||0),0);
+function gSync(g){const last=g.ses.map(x=>x.d).filter(Boolean).sort().pop()||'';S.abs.forEach(x=>{if(x.g===g.id){x.mk=last;x.mkTime='';x.none=false}})}
+function gClean(){S.mkg=(S.mkg||[]).filter(g=>{g.abs=g.abs.filter(id=>S.abs.some(x=>x.id===id&&x.g===g.id));return g.abs.length});S.abs.forEach(x=>{if(x.g&&!grpOf(x)){delete x.g;x.mk='';x.mkTime=''}})}
+function mkList(A){const out=[],seen=new Set();
+  A.forEach(x=>{if(x.none)return;const g=grpOf(x);
+    if(g){if(seen.has(g.id))return;seen.add(g.id);const L=g.ses.filter(s=>s.d).sort((a,b)=>a.d.localeCompare(b.d));
+      L.forEach((s,i)=>out.push({x,g,s,d:s.d,t:(s.t?s.t+' · ':'')+hm(s.m),i:i+1,n:L.length}))}
+    else if(x.mk)out.push({x,d:x.mk,t:x.mkTime||''})});
+  return out.sort((a,b)=>a.d.localeCompare(b.d))}
+const soonSpan=o=>{const a=acOf(o.x.acad);return `${a.ico} ${esc(a.name)} <b>${fmt(o.d)}</b>${o.t?' '+esc(o.t):''}${o.g?` <small>(${o.i}/${o.n}회)</small>`:''}`};
 const ST={wait:['보강 대기','t-wait'],plan:['보강 예정','t-plan'],done:['보강 완료','t-done'],none:['보강 없음','t-none']};
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),1900)}
 
 /* ---------- render ---------- */
-function render(){save();renderKids();renderSum();
+function render(){gClean();save();renderKids();renderSum();
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
   {const w=visAbs().filter(x=>status(x)==='wait').length,lb=$('#tabs [data-t=list]');lb.innerHTML='📋 보강 목록'+(w?`<span class="tb">${w}</span>`:'')}
   if(!S.acads.length&&tab!=='ac'){tab='ac'}
@@ -364,12 +382,12 @@ function renderKids(){const k=$('#kids');
 function renderSum(){const A=visAbs(),t=today();
   const w=A.filter(x=>status(x)==='wait').length;
   const end=new Date();end.setDate(end.getDate()+7);const e=ds(end);
-  const up=A.filter(x=>x.mk&&!x.none&&x.mk>=t&&x.mk<=e).length;
+  const up=mkList(A).filter(o=>o.d>=t&&o.d<=e).length;
   const m=t.slice(0,7);const dn=A.filter(x=>status(x)==='done'&&x.mk.slice(0,7)===m).length;
   $('#sum').innerHTML=`<div class="r"><b>${w}</b><span>🔴 보강 대기</span></div><div class="y"><b>${up}</b><span>⭐ 7일 안 보강</span></div><div class="g"><b>${dn}</b><span>✅ 이번 달 완료</span></div>`;
 }
 function eventsOn(d){const out=[];const A=visAbs();
-  A.forEach(x=>{if(x.date===d)out.push({k:'ab',x});if(x.mk===d&&!x.none)out.push({k:'mk',x})});
+  A.forEach(x=>{if(x.date===d)out.push({k:'ab',x})});mkList(A).forEach(o=>{if(o.d===d)out.push({k:'mk',x:o.x,o})});
   return out}
 function regularOn(d){const w=pd(d).getDay(),M=S.moves||[],ab=id=>visAbs().some(x=>x.acad===id&&x.date===d);
   const base=visAcads().filter(a=>(a.days||[]).includes(w)&&!(a.start&&d<a.start)&&!ab(a.id)&&!M.some(m=>m.acad===a.id&&m.from===d));
@@ -379,13 +397,13 @@ const movedAway=d=>(S.moves||[]).filter(m=>m.from===d&&m.to!==d).map(m=>({m,a:vi
 function pendHTML(big){const A=visAbs(),t=today();
   const wait=A.filter(x=>status(x)==='wait').sort((a,b)=>a.date.localeCompare(b.date));
   const e=new Date();e.setDate(e.getDate()+7);const es=ds(e);
-  const soon=A.filter(x=>status(x)==='plan'&&x.mk<=es).sort((a,b)=>a.mk.localeCompare(b.mk));
-  if(!wait.length&&!big){return soon.length?`<div class="soon">⭐ 곧 보강 · `+soon.map(x=>{const a=acOf(x.acad);return `<span>${a.ico} ${esc(a.name)} <b>${fmt(x.mk)}</b>${x.mkTime?' '+esc(x.mkTime):''}</span>`}).join('')+`</div>`:`<div class="soon ok">🎉 밀린 보강 없음! 아주 깔끔해요</div>`}
+  const soon=mkList(A).filter(o=>o.d>=t&&o.d<=es);
+  if(!wait.length&&!big){return soon.length?`<div class="soon">⭐ 곧 보강 · `+soon.map(o=>`<span>${soonSpan(o)}</span>`).join('')+`</div>`:`<div class="soon ok">🎉 밀린 보강 없음! 아주 깔끔해요</div>`}
   if(!wait.length)return `<div class="postit ok"><div class="pt-h">🎉 밀린 보강이 하나도 없어요!</div><div class="pt-s">결강이 생기면 여기에 빨갛게 붙어요</div></div>`;
   return `<div class="postit"><div class="pt-h">🚨 보강 잡아야 해요! <span class="pt-n">${wait.length}</span></div><div class="pt-s">학원에 연락해서 보강 날짜를 잡아 주세요</div>`+
     wait.map(x=>{const a=acOf(x.acad),n=Math.round((pd(t)-pd(x.date))/864e5);
       return `<div class="pt-i" data-ed="${x.id}" style="--c:${a.color}"><span class="ic">${a.ico}</span><span class="tx"><b>${esc(a.name)}</b>${kidTag(a)}<span class="d">❌ ${fmt(x.date)} 결강${x.reason?' · '+esc(x.reason):''}${x.memo?'<br>📝 '+esc(x.memo):''}</span></span><span class="dd ${n>=14?'hot':''}">${n>0?n+'일째<br>밀림':n===0?'오늘<br>결강':'예정<br>'+(-n)+'일 뒤'}</span><span class="pt-b"><button class="sbtn y" data-mk="${x.id}">보강<br>잡기</button><button class="sbtn gr" data-nomk="${x.id}">🚫 보강<br>없대요</button></span></div>`}).join('')+
-    (soon.length?`<div class="pt-soon">⭐ 곧 보강: `+soon.map(x=>{const a=acOf(x.acad);return `${a.ico} ${esc(a.name)} <b>${fmt(x.mk)}</b>${x.mkTime?' '+esc(x.mkTime):''}`}).join(' · ')+`</div>`:'')+`</div>`;
+    (soon.length?`<div class="pt-soon">⭐ 곧 보강: `+soon.map(soonSpan).join(' · ')+`</div>`:'')+`</div>`;
 }
 function renderCal(){
   if(!ym){const n=new Date();ym=[n.getFullYear(),n.getMonth()]}
@@ -398,7 +416,7 @@ function renderCal(){
     const ev=eventsOn(s),rg=regularOn(s);
     const cls=['day',d.getMonth()!==m?'out':'',s===t?'td':'',s===selDay?'sel':'',d.getDay()===0?'su':'',d.getDay()===6?'sa':''].join(' ');
     h+=`<button class="${cls}" data-d="${s}"><span class="n">${d.getDate()}</span><span class="evs">`+
-      ev.map(e=>{const a=acOf(e.x.acad);return `<span class="ev ${e.k}${e.k==='mk'&&status(e.x)==='done'?' dn':''}" title="${esc(a.name)}">${a.ico}</span>`}).join('')+
+      ev.map(e=>{const a=acOf(e.x.acad);return `<span class="ev ${e.k}${e.k==='mk'&&e.o.d<=t?' dn':''}" title="${esc(a.name)}">${a.ico}</span>`}).join('')+
       payOn(s).map(a=>`<span class="ev pay${isPaid(a,s)?' pd':''}" title="${esc(a.name)} 결제일">${a.ico}</span>`).join('')+rg.map(a=>a.mv?`<span class="ev mv${a.mv.to===a.mv.from?' tm':''}" title="${esc(a.name)} ${a.mv.to===a.mv.from?'시간 바뀜':'옮긴 수업'}">${a.ico}</span>`:`<span class="ev rg" title="${esc(a.name)} 정규">${a.ico}</span>`).join('')+`</span></button>`;
   }
   h+=`</div><div class="legend"><span><span class="ev ab">🎹</span> 결강</span><span><span class="ev mk">🎹</span> 보강 예정</span><span><span class="ev mk dn">🎹</span> 보강 끝</span><span><span class="ev rg" style="opacity:.4">🎹</span> 원래 수업</span><span><span class="ev mv">🎹</span> 옮긴 수업</span><span><span class="ev pay">🎹</span> 결제일</span></div></div>`;
@@ -414,7 +432,7 @@ function renderCal(){
 }
 function miniPend(){const A=visAbs(),n=A.filter(x=>status(x)==='wait').length;
   const e=new Date();e.setDate(e.getDate()+7);const es=ds(e);
-  const soon=A.filter(x=>status(x)==='plan'&&x.mk>=today()&&x.mk<=es).sort((a,b)=>a.mk.localeCompare(b.mk));
+  const soon=mkList(A).filter(o=>o.d>=today()&&o.d<=es);
   let h='';
   if(n)h+=`<button class="soon warn" id="goW">🚨 보강 날짜 잡을 것 <b>${n}개</b><span style="margin-left:auto">보강 목록 ›</span></button>`;
   const t=today(),b=new Date();b.setDate(b.getDate()-7);const bs=ds(b),P=[];
@@ -423,14 +441,14 @@ function miniPend(){const A=visAbs(),n=A.filter(x=>status(x)==='wait').length;
   const late=P.filter(x=>x.s<t),up=P.filter(x=>x.s>=t);
   if(late.length)h+=`<div class="soon pay late">💳 결제했나요? · `+late.map(({a,s})=>`<span>${a.ico} ${esc(a.name)} <b>${fmt(s)}</b></span>`).join('')+` <button class="sbtn" data-payd="${late[0].s}">확인하기</button></div>`;
   if(up.length)h+=`<div class="soon pay">💳 곧 결제 · `+up.map(({a,s})=>`<span>${a.ico} ${esc(a.name)} <b>${fmt(s)}</b> ${dday(s)}${a.pay.amt?' · '+esc(a.pay.amt):''}</span>`).join('')+`</div>`;
-  if(soon.length)h+=`<div class="soon">⭐ 곧 보강 · `+soon.map(x=>{const a=acOf(x.acad);return `<span>${a.ico} ${esc(a.name)} <b>${fmt(x.mk)}</b>${x.mkTime?' '+esc(x.mkTime):''}</span>`}).join('')+`</div>`;
+  if(soon.length)h+=`<div class="soon">⭐ 곧 보강 · `+soon.map(o=>`<span>${soonSpan(o)}</span>`).join('')+`</div>`;
   return h}
 function openDay(d){openSheet(`<h2>📅 이 날 일정<button class="x">✕</button></h2><div id="dayPop"></div>`);renderDay($('#dayPop'),d)}
 function renderDay(box,dd){const d=dd||selDay||today();box=box||$('#dayCard');
   const ev=eventsOn(d),rg=regularOn(d);
   let h=`<div class="dhead"><b>${fmt(d)} <span style="font-size:14px;color:var(--sub)">${dday(d)}</span></b><button class="sbtn" data-a="ab">❌ 결강</button><button class="sbtn y" data-a="mk">⭐ 보강</button></div>`;
   if(!ev.length&&!rg.length)h+=`<div class="empty"><span class="big">🌤️</span>이 날은 학원 일정이 없어요</div>`;
-  ev.forEach(e=>h+=itemHTML(e.x,e.k));
+  ev.forEach(e=>h+=itemHTML(e.x,e.k,e.o));
   rg.forEach(a=>h+=a.mv&&a.mv.to===a.mv.from?`<div class="item" style="--c:${a.color}"><div class="ic">${a.ico}</div><div class="tx"><b>${esc(a.name)}</b>${kidTag(a)}<div>⏰ 이 날만 <b>${esc(a.mv.time)}</b></div><div class="mvn">원래 ${a.time?esc(a.time):'시간'}</div></div><div class="acts"><button class="sbtn" data-tm2="${a.mv.id}">⏰ 시간 고치기</button><button class="sbtn gr" data-un="${a.mv.id}">↩️ 원래대로</button></div></div>`
     :a.mv?`<div class="item" style="--c:${a.color}"><div class="ic">${a.ico}</div><div class="tx"><b>${esc(a.name)}</b>${kidTag(a)}<div>🔀 옮긴 수업${(a.mv.time||a.time)?' · '+esc(a.mv.time||a.time):''}</div><div class="mvn">원래 ${fmt(a.mv.from)} 수업</div></div><div class="acts"><button class="sbtn" data-mv2="${a.mv.id}">🔀 다시 옮기기</button><button class="sbtn gr" data-un="${a.mv.id}">↩️ 원래대로</button></div></div>`
     :`<div class="item" style="--c:${a.color};opacity:.85"><div class="ic">${a.ico}</div><div class="tx"><b>${esc(a.name)}</b>${kidTag(a)}<div>원래 수업${timeOf(a,pd(d).getDay())?' · '+esc(timeOf(a,pd(d).getDay())):''}</div></div><div class="acts"><button class="sbtn" data-tm="${a.id}">⏰ 시간만</button><button class="sbtn" data-mv="${a.id}">🔀 다른 날로</button><button class="sbtn gr" data-q="${a.id}">못 가요</button></div></div>`);
@@ -449,9 +467,11 @@ function renderDay(box,dd){const d=dd||selDay||today();box=box||$('#dayCard');
   bindItems(box);
 }
 function kidTag(a){if(S.kids.length<2||kid!=='all')return'';const k=kidOf(a.kid);return k?`<span class="tag t-none">${k.em} ${esc(k.name)}</span>`:''}
-function itemHTML(x,k){const a=acOf(x.acad),st=status(x);
+function itemHTML(x,k,o){const a=acOf(x.acad),st=status(x),g=grpOf(x);
   let sub,btn='';
-  if(k==='mk'){sub=`<span class="lk">❌ ${fmt(x.date)} 결강분</span>${x.mkTime?' · ⏰ '+esc(x.mkTime):''}`;}
+  if(g&&k==='mk'&&o){sub=`<span class="lk">📦 나눠서 보강 ${o.i}/${o.n}회</span> · ⏰ ${o.s.t?esc(o.s.t)+' · ':''}<b>${hm(o.s.m)}</b>`;}
+  else if(g){sub=`❌ ${fmt(x.date)} 결강${x.reason?' · '+esc(x.reason):''}<br><span class="lk">📦 나눠서 보강 · ${hm(gDone(g))} / ${hm(gNeed(g))} 끝</span>`;}
+  else if(k==='mk'){sub=`<span class="lk">❌ ${fmt(x.date)} 결강분</span>${x.mkTime?' · ⏰ '+esc(x.mkTime):''}`;}
   else if(k==='ab'){sub=`${x.reason?esc(x.reason):''}${x.mk&&!x.none?` → <span class="lk">⭐ ${fmt(x.mk)} 보강</span>${x.mkTime?' '+esc(x.mkTime):''}`:''}${x.none?' → 보강 없음'+(x.noWhy?'('+esc(x.noWhy)+')':''):!x.mk&&noMk(x)?' · 보강 없는 학원':''}`;
     if(st==='wait')btn=`<span class="pt-b"><button class="sbtn y" data-mk="${x.id}">보강 잡기</button><button class="sbtn gr" data-nomk="${x.id}">🚫 없대요</button></span>`;}
   else{ // list
@@ -462,18 +482,27 @@ function itemHTML(x,k){const a=acOf(x.acad),st=status(x);
   return `<div class="item" style="--c:${a.color}" data-ed="${x.id}"><div class="ic">${a.ico}</div><div class="tx"><b>${esc(a.name)}</b><span class="tag ${tg[1]}">${tg[0]}</span>${k!=='list'&&k!=='mk'&&st==='wait'?'<span class="tag t-wait">대기</span>':''}${kidTag(a)}<div>${sub}</div>${memo}</div>${btn}</div>`;
 }
 function bindItems(box){
-  box.querySelectorAll('[data-mk]').forEach(b=>b.onclick=e=>{e.stopPropagation();openAbs(b.dataset.mk,null,true)});
+  box.querySelectorAll('[data-mk]').forEach(b=>b.onclick=e=>{e.stopPropagation();const x=S.abs.find(y=>y.id===b.dataset.mk);if(grpOf(x))openSplit(x.g);else openAbs(b.dataset.mk,null,true)});
   box.querySelectorAll('[data-nomk]').forEach(b=>b.onclick=e=>{e.stopPropagation();const x=S.abs.find(y=>y.id===b.dataset.nomk);if(!x)return;x.none=true;x.mk='';x.mkTime='';const a=acOf(x.acad);toast(`🚫 ${a?a.name:''} ${fmt(x.date)} 결강은 보강 없음으로 옮겼어요`);render();if($('#ov').classList.contains('on')&&selDay)openDay(selDay)});
-  box.querySelectorAll('[data-ed]').forEach(b=>b.onclick=()=>openAbs(b.dataset.ed));
+  box.querySelectorAll('[data-ed]').forEach(b=>b.onclick=()=>{const x=S.abs.find(y=>y.id===b.dataset.ed);if(grpOf(x))openSplit(x.g);else openAbs(b.dataset.ed)});
+  box.querySelectorAll('[data-gp]').forEach(b=>b.onclick=()=>openSplit(b.dataset.gp));
 }
+function groupHTML(g){const a=acOf(g.acad),t=today(),need=gNeed(g),got=gGot(g),dn=gDone(g);
+  const AB=S.abs.filter(x=>x.g===g.id).sort((p,q)=>p.date.localeCompare(q.date)),L=g.ses.filter(s=>s.d).sort((p,q)=>p.d.localeCompare(q.d));
+  return `<div class="item" style="--c:${a.color}" data-gp="${g.id}"><div class="ic">${a.ico}</div><div class="tx"><b>${esc(a.name)}</b><span class="tag t-mk">📦 나눠서 보강</span>${kidTag(a)}
+  <div>❌ ${AB.map(x=>fmt(x.date)).join(', ')} 결강 <small>(${AB.length}번 · ${hm(need)})</small></div>
+  <div class="gses">${L.map((s,i)=>`<span class="${s.d<=t?'dn':''}">${s.d<=t?'✅':'⭐'} ${fmt(s.d)}${s.t?' '+esc(s.t):''} <b>${hm(s.m)}</b></span>`).join('')||'<span>보강 날짜를 넣어 주세요</span>'}</div>
+  <div class="gbar"><i style="width:${need?Math.min(100,dn/need*100):0}%"></i></div><div class="note">${hm(dn)} / ${hm(need)} 끝${got<need?` · ⚠️ ${hm(need-got)} 더 잡아야 해요`:''}</div></div></div>`}
 function renderList(){const A=visAbs(),t=today();
   const wait=A.filter(x=>status(x)==='wait').sort((a,b)=>a.date.localeCompare(b.date));
   const plan=A.filter(x=>status(x)==='plan').sort((a,b)=>a.mk.localeCompare(b.mk));
   const past=A.filter(x=>['done','none'].includes(status(x))).sort((a,b)=>(b.mk||b.date).localeCompare(a.mk||a.date));
-  let h=`<button class="kshare" id="ksh">💬 카톡으로 가족에게 공유하기</button>`+pendHTML(true)+`<div class="card"><h3>⭐ 다가오는 보강 <small>${plan.length}개</small></h3>`;
-  h+=plan.length?plan.map(x=>itemHTML(x,'list')).join(''):`<div class="empty">잡혀 있는 보강이 없어요</div>`;
-  h+=`</div><div class="card"><h3>✅ 지난 기록 <small>${past.length}개</small></h3>`;
-  h+=past.length?past.slice(0,showAll?999:8).map(x=>itemHTML(x,'list')).join('')+(past.length>8&&!showAll?`<button class="sbtn gr" id="more" style="width:100%">더 보기 (${past.length-8}개)</button>`:''):`<div class="empty">아직 기록이 없어요</div>`;
+  const LI=arr=>{const seen=new Set();return arr.map(x=>{const g=grpOf(x);if(!g)return itemHTML(x,'list');if(seen.has(g.id))return'';seen.add(g.id);return groupHTML(g)}).filter(Boolean)};
+  const PL=LI(plan),PS=LI(past);
+  let h=`<button class="kshare" id="ksh">💬 카톡으로 가족에게 공유하기</button>`+pendHTML(true)+`<div class="card"><h3>⭐ 다가오는 보강 <small>${PL.length}개</small></h3>`;
+  h+=PL.length?PL.join(''):`<div class="empty">잡혀 있는 보강이 없어요</div>`;
+  h+=`</div><div class="card"><h3>✅ 지난 기록 <small>${PS.length}개</small></h3>`;
+  h+=PS.length?PS.slice(0,showAll?999:8).join('')+(PS.length>8&&!showAll?`<button class="sbtn gr" id="more" style="width:100%">더 보기 (${PS.length-8}개)</button>`:''):`<div class="empty">아직 기록이 없어요</div>`;
   h+=`</div>`;
   $('#main').innerHTML=h;bindItems($('#main'));$('#ksh').onclick=openShare;
   const mo=$('#more');if(mo)mo.onclick=()=>{showAll=true;renderList()};
@@ -703,7 +732,7 @@ function openAbs(id,pre,focusMk){
       <button class="chip ${md==='wait'?'on':''}" data-md="wait"><span class="e">⏳</span>${a&&a.noMk?'보강 없음 (학원 기본)':'아직 몰라요'}</button>
       <button class="chip ${md==='mk'?'on':''}" data-md="mk"><span class="e">⭐</span>날짜 정해졌어요</button>
       <button class="chip ${md==='none'?'on':''}" data-md="none"><span class="e">🚫</span>이번엔 보강 없어요</button></div>`;
-    if(md==='mk')h+=`<div class="mkbox"><div class="lbl">⭐ 보강 날짜</div><div class="row"><input type="date" class="inp" id="fm" value="${x.mk||''}"><input class="inp" id="fmt" value="${esc(x.mkTime)}" placeholder="시간 예) 5시"></div></div>`;
+    if(md==='mk')h+=`<div class="mkbox"><div class="lbl">⭐ 보강 날짜</div><div class="row"><input type="date" class="inp" id="fm" value="${x.mk||''}"><input class="inp" id="fmt" value="${esc(x.mkTime)}" placeholder="시간 예) 5시"></div>${old?'<button class="sbtn" id="spl" style="width:100%;margin-top:8px">📦 여러 번 나눠서 보강해요</button>':''}</div>`;
     if(md==='none')h+=`<div class="mkbox" style="background:#f4f0ec"><div class="lbl">🚫 왜 보강이 없어요? (선택)</div><div class="chips">${NOWHY.map(t=>`<button class="chip ${x.noWhy===t?'on':''}" data-nw="${t}">${t}</button>`).join('')}</div><p class="note">「보강 잡아야 해요」 알림에서 빠지고 지난 기록으로 가요.</p></div>`;
     h+=`<div class="lbl">메모 (선택)</div><input class="inp" id="fme" value="${esc(x.memo)}" placeholder="예) 선생님이 문자 주신대요" maxlength="60">
     <button class="go" id="ok">${old?'저장':'넣기'}</button>${old?'<button class="del" id="dl">🗑️ 이 기록 지우기</button>':''}`;
@@ -714,6 +743,7 @@ function openAbs(id,pre,focusMk){
     $('#fme').oninput=e=>x.memo=e.target.value;
     document.querySelectorAll('[data-md]').forEach(b=>b.onclick=()=>{const v=b.dataset.md;wantMk=v==='mk';x.none=v==='none';if(v!=='mk'){x.mk='';x.mkTime=''}if(v!=='none')delete x.noWhy;draw()});
     document.querySelectorAll('[data-nw]').forEach(b=>b.onclick=()=>{x.noWhy=x.noWhy===b.dataset.nw?'':b.dataset.nw;draw()});
+    const sp=$('#spl');if(sp)sp.onclick=()=>openSplit(null,{acad:x.acad,abs:[x.id]});
     if(wantMk&&!x.none){$('#fm').onchange=e=>x.mk=e.target.value;$('#fmt').oninput=e=>x.mkTime=e.target.value;
       if(focusMk&&!x.mk){focusMk=false;setTimeout(()=>{const f=$('#fm');f&&f.scrollIntoView({block:'center'})},50)}}
     $('#ok').onclick=()=>{if(!x.acad){toast('학원을 골라 주세요');return}if(!x.date){toast('결강 날짜를 넣어 주세요');return}
@@ -731,19 +761,69 @@ let confirmLate=false;
 function jump(d){selDay=d;const p=pd(d);ym=[p.getFullYear(),p.getMonth()]}
 
 function openMk(_,date){
-  const wait=visAbs().filter(x=>status(x)==='wait').sort((a,b)=>a.date.localeCompare(b.date));
+  const wait=visAbs().filter(x=>status(x)==='wait'&&!x.g).sort((a,b)=>a.date.localeCompare(b.date));
   if(!wait.length){openSheet(`<h2>⭐ 보강 넣기<button class="x">✕</button></h2><div class="empty"><span class="big">🎉</span>보강을 기다리는 결강이 없어요!<br>먼저 결강을 넣으면 여기서 보강 날짜를 잡을 수 있어요.</div><button class="go" id="toAb">❌ 결강 먼저 넣기</button>`);$('#toAb').onclick=()=>openAbs(null,{});return}
   let sel=wait[0].id,mk=date||today(),tm='';
   const draw=()=>{
     openSheet(`<h2>⭐ 보강 넣기<button class="x">✕</button></h2>
+    <button class="sbtn" id="spl" style="width:100%;margin-bottom:4px">📦 여러 번 나눠서 보강해요 <span class="note">(예: 3시간 결강 → 2시간+1시간)</span></button>
     <div class="lbl">어느 결강의 보강이에요? <span class="note">(보강 대기 ${wait.length}개)</span></div>
     <div class="pick">${wait.map(x=>{const a=acOf(x.acad);return `<div class="item ${sel===x.id?'on':''}" style="--c:${a.color}" data-s="${x.id}"><div class="ic">${a.ico}</div><div class="tx"><b>${esc(a.name)}</b>${kidTag(a)}<div>❌ ${fmt(x.date)} 결강 · ${dday(x.date)}${x.reason?' · '+esc(x.reason):''}</div></div>${sel===x.id?'<span style="font-size:22px">✔️</span>':''}</div>`}).join('')}</div>
     <div class="lbl">⭐ 보강 날짜</div><div class="row"><input type="date" class="inp" id="fm" value="${mk}"><input class="inp" id="fmt" value="${esc(tm)}" placeholder="시간 예) 5시"></div>
     <button class="go y" id="ok">⭐ 보강 저장</button>`);
     document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{sel=b.dataset.s;draw()});
+    $('#spl').onclick=()=>{const ac=S.abs.find(y=>y.id===sel).acad;openSplit(null,{acad:ac,abs:wait.filter(y=>y.acad===ac).map(y=>y.id)})};
     $('#fm').onchange=e=>mk=e.target.value;$('#fmt').oninput=e=>tm=e.target.value;
     $('#ok').onclick=()=>{if(!mk){toast('보강 날짜를 넣어 주세요');return}const x=S.abs.find(y=>y.id===sel);x.mk=mk;x.mkTime=tm;x.none=false;
       const a=acOf(x.acad);closeSheet();toast(`${a.ico} ${a.name} 보강 ${fmt(mk)} 저장! ⭐`);jump(mk);render()};
+  };draw();
+}
+
+const LENS=[60,90,120,180];
+function openSplit(gid,pre){
+  const old=gid?S.mkg.find(g=>g.id===gid):null;
+  const g=old?JSON.parse(JSON.stringify(old)):{id:uid(),acad:(pre&&pre.acad)||'',abs:(pre&&pre.abs)||[],per:0,ses:[]};
+  const freeWait=x=>!x.g&&status(x)==='wait';
+  if(!g.acad){const w=visAbs().find(freeWait);if(w)g.acad=w.acad}
+  const perOf=a=>{try{return baseSc(a).dur||60}catch(e){return 60}};
+  if(!g.per&&g.acad)g.per=perOf(acOf(g.acad));
+  if(!g.ses.length)g.ses.push({d:'',t:'',m:Math.min(120,gNeed(g)||120)});
+  let first=true;
+  const draw=()=>{const a=acOf(g.acad);
+    const AC=visAcads().filter(c=>c.id===g.acad||S.abs.some(x=>x.acad===c.id&&freeWait(x)));
+    const cand=g.acad?S.abs.filter(x=>x.acad===g.acad&&(x.g===g.id||g.abs.includes(x.id)||freeWait(x))).sort((p,q)=>p.date.localeCompare(q.date)):[];
+    const need=gNeed(g),got=gGot(g),gap=need-got;
+    let h=`<h2>📦 나눠서 보강<button class="x">✕</button></h2>
+    <p class="note" style="margin-top:0">빠진 수업을 여러 날로 나눠서 채울 때 써요. 예) 3시간 수업 3번 결강 → 2시간씩 4번 + 1시간 1번</p>
+    <div class="lbl">어느 학원?</div><div class="chips">${AC.map(c=>`<button class="chip ${g.acad===c.id?'on':''}" data-ga="${c.id}"><span class="e">${c.ico}</span>${esc(c.name)}</button>`).join('')||'<span class="note">보강 기다리는 결강이 없어요. 결강부터 넣어 주세요</span>'}</div>`;
+    if(a){h+=`<div class="lbl">❌ 어느 결강들? <span class="note">(눌러서 고르기)</span></div><div class="chips">${cand.map(x=>`<button class="chip ${g.abs.includes(x.id)?'on':''}" data-gx="${x.id}">${g.abs.includes(x.id)?'✔️ ':''}${fmt(x.date)}</button>`).join('')||'<span class="note">이 학원엔 보강 기다리는 결강이 없어요</span>'}</div>
+    <div class="lbl">⏱️ 빠진 수업 1번 길이</div><div class="chips">${[50,60,90,120,180].map(n=>`<button class="chip ${g.per===n?'on':''}" data-gp2="${n}">${hm(n)}</button>`).join('')}<input class="inp" id="gper" inputmode="numeric" style="width:80px" value="${g.per}" maxlength="3"><span class="note" style="align-self:center">분</span></div>
+    <div class="lbl">⭐ 보강 날짜와 시간</div>`+
+    g.ses.map((s,i)=>`<div class="srow"><div class="row" style="align-items:center"><b style="flex:none;width:34px">${i+1}회</b><input type="date" class="inp" data-sd="${i}" value="${s.d}"><input class="inp" data-st="${i}" value="${esc(s.t)}" placeholder="시작 예) 4시" style="max-width:110px"><button class="sbtn gr" style="flex:none" data-sx="${i}">✕</button></div>
+      <div class="chips" style="margin-top:6px">${LENS.map(n=>`<button class="chip ${+s.m===n?'on':''}" data-sm="${i}" data-n="${n}">${hm(n)}</button>`).join('')}${LENS.includes(+s.m)?'':`<button class="chip on">${hm(s.m)}</button>`}<input class="inp" data-sm2="${i}" inputmode="numeric" style="width:70px" value="${s.m}" maxlength="3"><span class="note" style="align-self:center">분</span></div></div>`).join('')+
+    `<button class="sbtn" id="gadd" style="width:100%;margin-top:8px">➕ 보강 날 하나 더</button>
+    <div class="gsum ${gap>0?'warn':gap<0?'over':'ok'}">결강 ${g.abs.length}번 × ${hm(g.per)} = <b>${hm(need)}</b><br>잡은 보강 ${g.ses.length}번 = <b>${hm(got)}</b><br>${gap>0?`⚠️ <b>${hm(gap)}</b> 더 잡아야 해요`:gap<0?`ℹ️ ${hm(-gap)} 더 많이 잡았어요`:'✅ 딱 맞아요!'}</div>`}
+    h+=`<button class="go y" id="gok">📦 저장</button>${old?'<button class="del" id="gdl">📦 나눠서 보강 풀기</button>':''}`;
+    const sc=first?0:$('#sheet').scrollTop;first=false;openSheet(h);$('#sheet').scrollTop=sc;
+    document.querySelectorAll('[data-ga]').forEach(b=>b.onclick=()=>{if(g.acad===b.dataset.ga)return;g.acad=b.dataset.ga;g.abs=S.abs.filter(x=>x.acad===g.acad&&freeWait(x)).map(x=>x.id);g.per=perOf(acOf(g.acad));draw()});
+    document.querySelectorAll('[data-gx]').forEach(b=>b.onclick=()=>{const id=b.dataset.gx;g.abs=g.abs.includes(id)?g.abs.filter(y=>y!==id):[...g.abs,id];draw()});
+    document.querySelectorAll('[data-gp2]').forEach(b=>b.onclick=()=>{g.per=+b.dataset.gp2;draw()});
+    const gp=$('#gper');if(gp)gp.onchange=e=>{const v=parseInt(e.target.value);if(v>=10&&v<=600)g.per=v;draw()};
+    document.querySelectorAll('[data-sd]').forEach(i=>i.onchange=e=>{g.ses[+i.dataset.sd].d=e.target.value});
+    document.querySelectorAll('[data-st]').forEach(i=>i.oninput=e=>{g.ses[+i.dataset.st].t=e.target.value});
+    document.querySelectorAll('[data-sm]').forEach(b=>b.onclick=()=>{g.ses[+b.dataset.sm].m=+b.dataset.n;draw()});
+    document.querySelectorAll('[data-sm2]').forEach(i=>i.onchange=e=>{const v=parseInt(e.target.value);if(v>=10&&v<=600)g.ses[+i.dataset.sm2].m=v;draw()});
+    document.querySelectorAll('[data-sx]').forEach(b=>b.onclick=()=>{g.ses.splice(+b.dataset.sx,1);draw()});
+    const ad=$('#gadd');if(ad)ad.onclick=()=>{const L=g.ses[g.ses.length-1],gap=gNeed(g)-gGot(g);g.ses.push({d:L&&L.d?addDays(L.d,1):'',t:L?L.t:'',m:gap>0?Math.min(gap,L?+L.m||120:120):(L?+L.m:60)});draw()};
+    $('#gok').onclick=()=>{if(!g.acad||!g.abs.length){toast('나눠서 보강할 결강을 골라 주세요');return}
+      g.ses=g.ses.filter(s=>s.d);
+      S.abs.forEach(x=>{if(x.g===g.id&&!g.abs.includes(x.id)){delete x.g;x.mk='';x.mkTime=''}if(g.abs.includes(x.id))x.g=g.id});
+      const i=S.mkg.findIndex(y=>y.id===g.id);if(i>=0)S.mkg[i]=g;else S.mkg.push(g);gSync(g);
+      const a=acOf(g.acad),gap=gNeed(g)-gGot(g);closeSheet();
+      toast(!g.ses.length?`${a.ico} 묶었어요 · 보강 날짜를 넣어 주세요`:gap>0?`${a.ico} 저장! ${hm(gap)} 더 잡아야 해요`:`${a.ico} 보강 ${g.ses.length}번 저장! ⭐`);
+      if(g.ses.length)jump(g.ses.map(s=>s.d).sort()[0]);render()};
+    const dl=$('#gdl');if(dl)dl.onclick=()=>{if(!dl.dataset.c){dl.dataset.c=1;dl.textContent='한 번 더 누르면 결강은 «보강 대기»로 돌아가요';return}
+      S.abs.forEach(x=>{if(x.g===g.id){delete x.g;x.mk='';x.mkTime=''}});S.mkg=S.mkg.filter(y=>y.id!==g.id);closeSheet();toast('📦 풀었어요');render()};
   };draw();
 }
 
@@ -780,11 +860,11 @@ function openSet(){
     $('#rld').onclick=hardReload;
     const xb=$('#extb');if(xb)xb.onclick=()=>{location.href='kakaotalk://web/openExternal?url='+encodeURIComponent(shareURL())};
     $('#cgo').onclick=()=>{const v=$('#cin').value.trim().toLowerCase();if(!/^[a-z0-9]{10,16}$/.test(v)){toast('코드를 확인해 주세요');return}S.code=v;history.replaceState(null,'',shareURL());pull('hard').then(r=>{toast(r==='got'?'☁️ 불러왔어요!':'이 코드엔 기록이 없어서 지금 기록을 올렸어요');closeSheet();render()})};
-    $('#ex').onclick=()=>{const b=new Blob([JSON.stringify({app:'academy-makeup',v:1,at:new Date().toISOString(),data:{kids:S.kids,acads:S.acads,abs:S.abs}},null,1)],{type:'application/json'});
+    $('#ex').onclick=()=>{const b=new Blob([JSON.stringify({app:'academy-makeup',v:1,at:new Date().toISOString(),data:{kids:S.kids,acads:S.acads,abs:S.abs,moves:S.moves||[],sch:S.sch||{},plans:S.plans||[],mkg:S.mkg||[]}},null,1)],{type:'application/json'});
       const u=URL.createObjectURL(b),l=document.createElement('a');l.href=u;l.download=`학원보강수첩_${today()}.json`;l.click();setTimeout(()=>URL.revokeObjectURL(u),2000)};
     $('#im').onclick=()=>$('#imf').click();
     $('#imf').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const j=JSON.parse(await f.text());const d=j.data||j;if(!Array.isArray(d.acads))throw 0;
-      S.kids=d.kids||[];S.acads=d.acads;S.abs=d.abs||[];S.moves=d.moves||[];S.sch=d.sch||{};S.plans=d.plans||[];ttPlan='';kid='all';closeSheet();toast('불러왔어요!');render()}catch(_){toast('이 파일은 못 읽겠어요')}};
+      S.kids=d.kids||[];S.acads=d.acads;S.abs=d.abs||[];S.moves=d.moves||[];S.sch=d.sch||{};S.plans=d.plans||[];S.mkg=d.mkg||[];ttPlan='';kid='all';closeSheet();toast('불러왔어요!');render()}catch(_){toast('이 파일은 못 읽겠어요')}};
     $('#clr').onclick=()=>{const c=new Date();c.setMonth(c.getMonth()-6);const cs=ds(c);const n=S.abs.length;
       S.abs=S.abs.filter(x=>!(['done','none'].includes(status(x))&&(x.mk||x.date)<cs));toast(`${n-S.abs.length}개 지웠어요`);render()};
   };draw();
@@ -862,9 +942,9 @@ function shareText(o){const A=visAbs(),t=today(),L=[];
   const who=a=>S.kids.length>1&&kid==='all'&&kidOf(a.kid)?kidOf(a.kid).em+kidOf(a.kid).name+' ':'';
   const plc=a=>a.place?`\n   📍 ${a.place}`+(o.map?`\n   🗺️ ${mapURL(a.place)}`:''):'';
   L.push(`📒 ${kn}학원 보강 일정 (${fmt(t)} 기준)`);
-  if(o.up){const P=A.filter(x=>status(x)==='plan').sort((a,b)=>a.mk.localeCompare(b.mk));
+  if(o.up){const P=mkList(A).filter(q=>q.d>=t);
     L.push('','⭐ 다가오는 보강');
-    if(P.length)P.forEach(x=>{const a=acOf(x.acad);const tm=x.mkTime||a.time||'';L.push(`• ${a.ico} ${who(a)}${a.name} — ${fmt(x.mk)}${tm?' '+tm:''}${x.mk===t?' (오늘!)':dday(x.mk)==='내일'?' (내일)':''}`+plc(a))});
+    if(P.length)P.forEach(q=>{const a=acOf(q.x.acad);const tm=q.g?(q.s.t?q.s.t+' ':'')+hm(q.s.m)+` (나눠서 보강 ${q.i}/${q.n}회)`:q.t||a.time||'';L.push(`• ${a.ico} ${who(a)}${a.name} — ${fmt(q.d)}${tm?' '+tm:''}${q.d===t?' (오늘!)':dday(q.d)==='내일'?' (내일)':''}`+plc(a))});
     else L.push('  잡힌 보강 없어요')}
   if(o.up){const MV=(S.moves||[]).filter(m=>m.to>=t&&visAcads().some(a=>a.id===m.acad)).sort((a,b)=>a.to.localeCompare(b.to));
     if(MV.length){L.push('','🔀 바뀐 수업 날짜·시간');MV.forEach(m=>{const a=acOf(m.acad),tm=m.time||a.time||'';L.push(m.to===m.from?`• ${a.ico} ${who(a)}${a.name} — ${fmt(m.to)} 이 날만 ⏰ ${tm}${a.time?' (원래 '+a.time+')':''}`+plc(a):`• ${a.ico} ${who(a)}${a.name} — ${fmt(m.from)} → ${fmt(m.to)}${tm?' '+tm:''}`+plc(a))})}}
@@ -891,7 +971,7 @@ async function copyTxt(t,msg){try{await navigator.clipboard.writeText(t);toast(m
 $('#kakao').onclick=openShare;
 
 /* ---------- 새 버전 자동 반영 ---------- */
-const APPVER='20261108g';
+const APPVER='20261110a';
 let verBusy=false;
 async function checkVer(auto){if(verBusy)return;verBusy=true;try{const r=await fetch(location.pathname+'?vc='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/const APPVER='([^']+)'/);
   if(m&&m[1]!==APPVER){if(auto&&($('#ov').classList.contains('on')||document.activeElement?.tagName==='INPUT'))return;await new Promise(r=>setTimeout(r,900));location.reload();return true}}catch(e){}finally{verBusy=false}return false}
